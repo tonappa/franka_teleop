@@ -1,0 +1,4 @@
+cartesian_impedance_example_controller:
+  translational_stiffness: 1000
+  rotational_stiffness: 50
+  nullspace_stiffness: 20
