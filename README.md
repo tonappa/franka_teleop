@@ -1,4 +1,4 @@
-# 🚀 franka_teleop — Dockerized ROS Workspace
+# 🚀 franka_teleop (servo-devel)— Dockerized ROS Workspace
 
 > Docker-based workspace for **teleoperating the Franka Emika Panda** robot using **Cartesian impedance control**, with mouse- or webcam-based teleoperation.  
 > Designed to evolve towards **MoveIt Servo**.
