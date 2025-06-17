@@ -86,13 +86,13 @@ cd ~/Desktop/franka_teleop
 
 >✏️ Modifica `build.bash` per cambiare nome immagine o versione ROS se necessario.
 
-###▶️ 2️⃣ **Avvia il container**
+### ▶️ 2️⃣ **Avvia il container**
 ```bash
 cd ~/Desktop/franka_teleop
 ./docker/run.bash
 ```
 
-###🗂️ 3️⃣ **Primo setup dentro il container**
+### 🗂️ 3️⃣ **Primo setup dentro il container**
 Dopo il primo avvio, esegui:
 ```bash
 sudo apt update && sudo apt upgrade
@@ -100,8 +100,8 @@ sudo apt install ros-noetic-franka-ros
 ```
 ---
 
-##🕹️ **Teleoperazione**
-###🖱️ **Teleop con Mouse**
+## 🕹️ **Teleoperazione**
+### 🖱️ **Teleop con Mouse**
 1️⃣ Avvia il controller:
 ```bash
 roslaunch franka_art panda_gazebo_impedance.launch
@@ -111,7 +111,7 @@ roslaunch franka_art panda_gazebo_impedance.launch
 rosrun franka_art mouse_to_pose.py
 ```
 
-###📷 **Teleop con Webcam**
+### 📷 **Teleop con Webcam**
 **1️⃣ Avvia il controller:**
 ```bash
 roslaunch franka_art panda_gazebo_impedance.launch
@@ -125,12 +125,14 @@ rosrun franka_art hand_to_pose_v1.py
 
 ---
 
-##🔭 **Prossimi Sviluppi**
+## 🔭 **Prossimi Sviluppi**
 - ✅ Migliorare il controllo in impedenza nel branch main
 
 - 🚧 Portare la teleoperazione su **MoveIt Servo** con PoseTwist su branch dedicato
+  
+---
 
-##⚡ **Note Tecniche**
+## ⚡ **Note Tecniche**
 - Il controller di impedenza cartesiana accetta PoseStamped.
 - Per MoveIt Servo, si utilizzerà PoseTwist per un controllo in velocità.
 - Il tracking tramite webcam è limitato a XY e al primo quadrante, finché non si integra una stima di profondità accurata.
