@@ -1,139 +1,148 @@
-# 🚀 **franka_teleop — Dockerized ROS Workspace**
+# 🚀 franka_teleop — Dockerized ROS Workspace
 
-> Workspace Docker-based per la **teleoperazione del Franka Emika Panda** con controllo in **impedenza cartesiana** e teleoperazione via **mouse** o **webcam**.  
-> Strutturato per evolvere verso **MoveIt Servo**.
-
----
-
-## ✨ **Caratteristiche**
-
-- ✅ **Supporto ROS 1 (Noetic)** — configurabile per ROS 2  
-- ✅ **Ambiente di sviluppo pre-configurato** (NVIDIA, MoveIt!, Gazebo, RealSense)  
-- ✅ **Teleoperazione versatile:** mouse o webcam  
-- ✅ **Workspace condiviso** tra host e container  
-- ✅ **Branch principali:**
-  - `main` → Controllo in impedenza cartesiana `TwistStamped` con `franka_ros`
-  - `servo` (da creare) → Sviluppo MoveIt Servo con `TwistStamped`
+> Docker-based workspace for **teleoperating the Franka Emika Panda** robot using **Cartesian impedance control**, with mouse- or webcam-based teleoperation.  
+> Designed to evolve towards **MoveIt Servo**.
 
 ---
 
-## 📂 **Struttura del progetto**
+## ✨ Features
+
+- ✅ **ROS 1 Noetic** support (easily configurable for ROS 2)  
+- ✅ **Pre-configured development environment** (NVIDIA drivers, MoveIt!, Gazebo, RealSense)  
+- ✅ **Flexible teleoperation** via mouse or webcam  
+- ✅ **Shared workspace** between host and container  
+- ✅ **Main branches**:  
+  - `main` → Cartesian impedance control using `TwistStamped` messages with `franka_ros`  
+  - `servo` (to be created) → MoveIt Servo development with `TwistStamped`  
+
+---
+
+## 📂 Project Structure
+
 
 ```plaintext
 franka_teleop/
 ├── docker/
-│   ├── Dockerfile         # Definizione immagine
-│   ├── build.bash         # Build dell’immagine
-│   ├── run.bash           # Avvio del container
+│   ├── Dockerfile         # Base image definition
+│   ├── build.bash         ## Build the Docker image
+│   ├── run.bash           # Launch the Docker container
 ├── src/
 │   ├── franka_art/              # Custom teleoperation & controllers
 │   ├── franka_ros/              # Driver ufficiale Franka
 │   ├── panda_moveit_config/     # Config MoveIt! per Panda
 ├── scripts/
-│   ├── mouse_to_pose.py         # Teleop con mouse
-│   ├── hand_to_pose_v1.py       # Teleop con webcam (in sviluppo)
+│   ├── mouse_to_pose.py         # Mouse-based teleoperation
+│   ├── hand_to_pose_v1.py       # Webcam-based teleoperation (in development)
 ```
+
 
 ---
 
-## 🧰 **Pacchetti & Strumenti**
+## 🧰 Dependencies
 
-### 📦 **Dipendenze base**
+### System Packages
 
-- bash-completion  
-- build-essential  
-- git  
-- gedit  
-- sudo  
-- wget  
-- curl  
-- pip  
-- python3-pip  
-- python3-tk  
+- `bash-completion`  
+- `build-essential`  
+- `git`  
+- `gedit` (or your favorite editor)  
+- `sudo`  
+- `wget`, `curl`  
+- `python3-pip`, `python3-tk`
 
-### 🐍 **Pacchetti Python**
+### Python Packages
 
-- pyrealsense2  
-- opencv-python  
-- pandas  
-- mediapipe  
+- `pyrealsense2`  
+- `opencv-python`  
+- `pandas`  
+- `mediapipe`
 
-### 🤖 **ROS Noetic**
+### ROS Noetic Packages
 
-- ros-noetic-catkin  
-- python3-catkin-tools  
-- python3-osrf-pycommon  
-- ros-noetic-moveit  
-- ros-noetic-gazebo-ros  
-- ros-noetic-gazebo-ros-control  
-- ros-noetic-gazebo-ros-pkgs  
-- ros-noetic-gazebo-plugins  
-- ros-noetic-realsense2-camera  
-- ros-noetic-realsense2-description  
+- `ros-noetic-catkin`  
+- `python3-catkin-tools`  
+- `python3-osrf-pycommon`  
+- `ros-noetic-moveit`  
+- `ros-noetic-gazebo-ros`  
+- `ros-noetic-gazebo-ros-control`  
+- `ros-noetic-gazebo-ros-pkgs`  
+- `ros-noetic-gazebo-plugins`  
+- `ros-noetic-realsense2-camera`  
+- `ros-noetic-realsense2-description`  
 
->⚙️ **Extra:** installare manualmente `ros-noetic-franka-ros` dopo il primo avvio.
+> **Note:** After first container launch, install the Franka ROS driver manually:
+> ```bash
+> sudo apt update && sudo apt upgrade
+> sudo apt install ros-noetic-franka-ros
+> ```
 
 ---
 
-## ⚙️ **Build & Run**
+## ⚙️ Build & Run
 
-### 🔨 1️⃣ **Build dell’immagine**
+1. **Build the Docker image**  
+   ```bash
+   cd ~/Desktop/franka_teleop
+   ./docker/build.bash
 
-```bash
-cd ~/Desktop/franka_teleop
-./docker/build.bash
-```
 
->✏️ Modifica `build.bash` per cambiare nome immagine o versione ROS se necessario.
+>⚙️ **Extra:** Edit docker/build.bash to change the image name or ROS version if needed.
 
-### ▶️ 2️⃣ **Avvia il container**
+
+2. **Launch the container**
 ```bash
 cd ~/Desktop/franka_teleop
 ./docker/run.bash
 ```
 
-### 🗂️ 3️⃣ **Primo setup dentro il container**
-Dopo il primo avvio, esegui:
+3. **First-time setup inside the container**
+Every container start, run:
 ```bash
 sudo apt update && sudo apt upgrade
 sudo apt install ros-noetic-franka-ros
 ```
 ---
 
-## 🕹️ **Teleoperazione**
-### 🖱️ **Teleop con Mouse**
-1️⃣ Avvia il controller:
+## 🕹️ **Teleoperation**
+### 🖱️ **Mouse-Based Teleop**
+
+1. In the container, launch the impedance controller::
 ```bash
 roslaunch franka_art panda_gazebo_impedance.launch
 ```
-2️⃣ In un altro terminale/container esegui:
+2. In a second terminal (host or container), run::
 ```bash
 rosrun franka_art mouse_to_pose.py
 ```
 
-### 📷 **Teleop con Webcam**
-1️⃣ Avvia il controller:
+### 📷 ** Webcam-Based Teleop**
+
+>⚠️ **Limitation**: Only planar (XY) motion is supported; Z-axis movement is not implemented due to depth estimation constraints.
+
+1. Launch the same impedance controller:
 ```bash
 roslaunch franka_art panda_gazebo_impedance.launch
 ```
-2️⃣ In un altro terminale/container esegui:
+2. In another terminal, run:
 ```bash
 rosrun franka_art hand_to_pose_v1.py
 ```
 
->⚠️ Nota: funziona solo nel piano XY. Il movimento lungo Z non è implementato per limiti di profondità webcam.
-
 ---
 
-## 🔭 **Prossimi Sviluppi**
-- ✅ Migliorare il controllo in impedenza nel branch main
+## 🔭 **Roadmap**
+- ✅  Refine Cartesian impedance control on the 'main' branch
 
-- 🚧 Portare la teleoperazione su **MoveIt Servo** con PoseTwist su branch dedicato
+- 🚧  Develop MoveIt Servo teleoperation (PoseTwist) on a dedicated 'servo' branch
   
 ---
 
-## ⚡ **Note Tecniche**
-- Il controller di impedenza cartesiana accetta PoseStamped.
-- Per **MoveIt Servo**, si utilizzerà PoseTwist per un controllo in velocità.
-- Il tracking tramite webcam è limitato a XY e al primo quadrante, finché non si integra una stima di profondità accurata.
+## ⚡ **Technical Notes**
+- The current impedance controller subscribes to 'geometry_msgs/PoseStamped' for pose targets.
+- MoveIt Servo integration will use 'geometry_msgs/PoseTwist' for velocity-based control.
+- Webcam tracking is limited to the first quadrant of the XY-plane until reliable depth estimation is implemented.
+
+
+**— End of README**
+
 
