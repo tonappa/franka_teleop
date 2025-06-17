@@ -112,11 +112,11 @@ rosrun franka_art mouse_to_pose.py
 ```
 
 ### 📷 **Teleop con Webcam**
-**1️⃣ Avvia il controller:**
+1️⃣ Avvia il controller:
 ```bash
 roslaunch franka_art panda_gazebo_impedance.launch
 ```
-**2️⃣ In un altro terminale/container esegui:**
+2️⃣ In un altro terminale/container esegui:
 ```bash
 rosrun franka_art hand_to_pose_v1.py
 ```
@@ -134,6 +134,6 @@ rosrun franka_art hand_to_pose_v1.py
 
 ## ⚡ **Note Tecniche**
 - Il controller di impedenza cartesiana accetta PoseStamped.
-- Per MoveIt Servo, si utilizzerà PoseTwist per un controllo in velocità.
+- Per **MoveIt Servo**, si utilizzerà PoseTwist per un controllo in velocità.
 - Il tracking tramite webcam è limitato a XY e al primo quadrante, finché non si integra una stima di profondità accurata.
 
