@@ -96,7 +96,6 @@ cd ~/Desktop/franka_teleop
 ```
 
 3. **First-time setup inside the container**
-Every container start, run:
 ```bash
 sudo apt update && sudo apt upgrade
 sudo apt install ros-noetic-franka-ros
@@ -115,7 +114,7 @@ roslaunch franka_art panda_gazebo_impedance.launch
 rosrun franka_art mouse_to_pose.py
 ```
 
-### 📷 ** Webcam-Based Teleop**
+### 📷 **Webcam-Based Teleop**
 
 >⚠️ **Limitation**: Only planar (XY) motion is supported; Z-axis movement is not implemented due to depth estimation constraints.
 
@@ -142,7 +141,5 @@ rosrun franka_art hand_to_pose_v1.py
 - MoveIt Servo integration will use 'geometry_msgs/PoseTwist' for velocity-based control.
 - Webcam tracking is limited to the first quadrant of the XY-plane until reliable depth estimation is implemented.
 
-
-**— End of README**
 
 
