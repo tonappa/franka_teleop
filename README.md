@@ -32,7 +32,7 @@ franka_teleop/
 ├── scripts/
 │   ├── mouse_to_pose.py         # Teleop con mouse
 │   ├── hand_to_pose_v1.py       # Teleop con webcam (in sviluppo)
-
+```
 
 ---
 
