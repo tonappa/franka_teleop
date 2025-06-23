@@ -80,7 +80,7 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt --mount=type=cache,s
         ros-$ROS_DISTRO-gazebo-ros-pkgs \
         ros-$ROS_DISTRO-gazebo-plugins \
         ros-noetic-realsense2-camera \
-	ros-noetic-realsense2-description ; \
+	    ros-noetic-realsense2-description ; \
     fi
 
 ARG MYUID=1000

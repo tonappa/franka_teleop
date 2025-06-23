@@ -83,7 +83,7 @@ joint_impedance_example_controller:
     coriolis_factor: 1.0
 
 cartesian_impedance_example_controller:
-    type: franka_example_controllers/CartesianImpedanceExampleController
+    type: franka_example_controllers/CartesianImpedanceParkController
     arm_id: $(arg arm_id)
     joint_names:
         - $(arg arm_id)_joint1
@@ -94,12 +94,12 @@ cartesian_impedance_example_controller:
         - $(arg arm_id)_joint6
         - $(arg arm_id)_joint7
     stiffness:
-        x: 1000
-        y: 1000
-        z: 1000
-        rx: 50
-        ry: 50
-        rz: 50
+        x: 400 #1000
+        y: 400 #1000
+        z: 400 #1000
+        rx: 20 #50
+        ry: 20 #50
+        rz: 20 #50
 
 dual_arm_cartesian_impedance_example_controller:
     type: franka_example_controllers/DualArmCartesianImpedanceExampleController

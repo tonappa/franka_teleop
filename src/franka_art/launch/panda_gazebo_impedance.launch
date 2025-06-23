@@ -1,23 +1,53 @@
 <?xml version="1.0"?>
 <launch>
 
+  <!-- Dichiara un arg per poter passare dinamicamente il flag -->
+  <arg name="hand_swap" default="0" doc="0: left→pose,right→gesture; 1: viceversa"/>
+
   <!-- Panda options -->
-  <arg name="arm_id"       default="panda" doc="Name of the panda robot to spawn" />
-  <arg name="load_gripper" default="true" />
-  <arg name="transmission" default="effort" />
+  <arg name="arm_id"        default="panda" doc="Name of the panda robot to spawn" />
+  <arg name="load_gripper"  default="true"  />
+  <arg name="transmission"  default="effort" />
+  <arg name="use_realsense" default="false" />
 
   <!-- Gazebo options -->
-  <arg name="gazebo_gui" default="true" doc="Start Gazebo GUI"/>
-  <arg name="paused" default="false" doc="Start Gazebo paused"/>
+  <arg name="gazebo_gui" default="true"  doc="Start Gazebo GUI"/>
+  <arg name="paused"     default="false" doc="Start Gazebo paused"/>
 
-  <!-- Launch the gazebo simulator and spawn the robot -->
+  <!-- Propaga use_realsense anche ai param -->
+  <param name="use_realsense" value="$(arg use_realsense)"/>
 
-  <rosparam file="$(find franka_example_controllers)/config/franka_example_controllers.yaml" subst_value="true" />
+  <!-- Se use_realsense è true, includi il driver realsense2_camera -->
+  <group if="$(arg use_realsense)">
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+      <arg name="enable_color"  value="true"/>
+      <arg name="enable_depth"  value="true"/>
+      <arg name="align_depth"   value="true"/>
+    </include>
+  </group>
 
-  <include file="$(find franka_gazebo)/launch/panda_teleop.launch" pass_all_args="true">
-    <arg name="headless" value="$(eval not arg('gazebo_gui'))" />
-    <arg name="use_gripper" default="$(arg load_gripper)" />
-    <arg name="controller" default="cartesian_impedance_example_controller" />
+  <!-- Carico i parametri del controller -->
+  <rosparam file="$(find franka_example_controllers)/config/franka_example_controllers.yaml"
+            subst_value="true"/>
+
+  <!-- Lancio Gazebo + spawn del Panda -->
+  <include file="$(find franka_gazebo)/launch/panda_softbots.launch"
+           pass_all_args="true">
+    <arg name="headless"                value="$(eval not arg('gazebo_gui'))"/>
+    <arg name="use_gripper"             value="$(arg load_gripper)"/>
+    <arg name="interactive_marker"      value="false"/>
+    <arg name="controller"              value="cartesian_impedance_example_controller"/>
   </include>
+
+  <!-- Nodo Python hand_to_pose_v2 -->
+  <node pkg="franka_art"
+        type="hand_to_pose_v2.py"
+        name="hand_to_pose_v2"
+        output="screen">
+    <!-- Parametro privato per invertire le mani -->
+    <param name="hand_swap" value="$(arg hand_swap)"/>
+    <!-- copia privata dell'arg use_realsense -->
+    <param name="use_realsense" value="$(arg use_realsense)"/>
+  </node>
 
 </launch>
