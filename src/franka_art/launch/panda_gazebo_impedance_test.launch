@@ -1,10 +1,6 @@
 <?xml version="1.0"?>
 <launch>
 
-  <!-- argomenti da dare durante il launch -->
-  <arg name="hand_swap" default="0" doc="0: left→pose,right→gesture; 1: viceversa"/>
-  <arg name="use_realsense" default="false" doc="Use realsense camera for hand tracking"/>
-
   <!-- Panda options -->
   <arg name="arm_id"        default="panda" doc="Name of the panda robot to spawn" />
   <arg name="load_gripper"  default="true"  />
@@ -14,17 +10,12 @@
   <arg name="gazebo_gui" default="true"  doc="Start Gazebo GUI"/>
   <arg name="paused"     default="false" doc="Start Gazebo paused"/>
 
-  <!-- Propaga use_realsense anche ai param -->
-  <param name="use_realsense" value="$(arg use_realsense)"/>
-
   <!-- Se use_realsense è true, includi il driver realsense2_camera -->
-  <group if="$(arg use_realsense)">
     <include file="$(find realsense2_camera)/launch/rs_camera.launch">
       <arg name="enable_color"  value="true"/>
       <arg name="enable_depth"  value="true"/>
       <arg name="align_depth"   value="true"/>
     </include>
-  </group>
 
   <!-- Carico i parametri del controller -->
   <rosparam file="$(find franka_example_controllers)/config/franka_example_controllers.yaml"
@@ -41,8 +32,6 @@
 
   <!-- Nodo Python hand_to_pose-->
   <node pkg="franka_art" type="hand_to_pose_test.py" name="hand_to_pose_test" output="screen">
-    <param name="hand_swap" value="$(arg hand_swap)"/>
-    <param name="use_realsense" value="$(arg use_realsense)"/>
   </node>
 
 </launch>

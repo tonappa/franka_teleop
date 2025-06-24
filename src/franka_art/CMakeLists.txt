@@ -6,15 +6,20 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   std_msgs
   moveit_servo
+  tf2_ros
+  tf2_geometry_msgs
 )
 
-catkin_package()
+  catkin_package(
+    CATKIN_DEPENDS tf2_geometry_msgs
+  )
 
 catkin_install_python(PROGRAMS
-  scripts/hand_to_twist.py
-  scripts/hand_to_pose_v2.py
+  scripts/hand_to_pose.py
+  scripts/hand_to_pose_alpha.py
   scripts/hand_to_pose_beta.py
   scripts/gesture_recognizer.py
+  scripts/hand_to_pose_test.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

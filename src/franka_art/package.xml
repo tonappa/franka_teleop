@@ -16,6 +16,7 @@
   <depend>geometry_msgs</depend>
   <depend>std_msgs</depend>
   <depend>moveit_servo</depend>
+  <depend>tf2_geometry_msgs</depend>
 
   <!-- Export -->
   <export>
