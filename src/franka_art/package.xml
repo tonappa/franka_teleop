@@ -5,21 +5,30 @@
   <description>The franka_art package</description>
 
   <maintainer email="tonappa@todo.todo">tonappa</maintainer>
-
   <license>TODO</license>
 
-  <!-- Build dependencies -->
+  <!-- Build tool -->
   <buildtool_depend>catkin</buildtool_depend>
 
+  <!-- Build dependencies -->
+  <build_depend>rospy</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>moveit_servo</build_depend>
+  <build_depend>tf2_ros</build_depend>
+  <build_depend>tf2_geometry_msgs</build_depend>
 
-  <depend>rospy</depend>
-  <depend>geometry_msgs</depend>
-  <depend>std_msgs</depend>
-  <depend>moveit_servo</depend>
-  <depend>tf2_geometry_msgs</depend>
+
+  <!-- Run-time dependencies -->
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>moveit_servo</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>tf2_geometry_msgs</exec_depend>
+
 
   <!-- Export -->
   <export>
   </export>
-
 </package>
