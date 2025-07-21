@@ -74,7 +74,9 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt --mount=type=cache,s
         ros-$ROS_DISTRO-catkin \
         python3-catkin-tools \
         python3-osrf-pycommon \
+        ros-$ROS_DISTRO-franka-ros \
         ros-$ROS_DISTRO-moveit \
+        ros-$ROS_DISTRO-moveit-servo \
         ros-$ROS_DISTRO-gazebo-ros \
         ros-$ROS_DISTRO-gazebo-ros-control \
         ros-$ROS_DISTRO-gazebo-ros-pkgs \

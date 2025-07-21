@@ -17,30 +17,28 @@
   <rosparam file="$(find franka_example_controllers)/config/franka_example_controllers.yaml"
             subst_value="true"/>
 
-  <!-- <include file="$(find franka_gazebo)/launch/panda_softbots.launch"
+  <include file="$(find franka_gazebo)/launch/panda_softbots.launch"
            pass_all_args="true">
     <arg name="headless"                value="$(eval not arg('gazebo_gui'))"/>
     <arg name="use_gripper"             value="$(arg load_gripper)"/>
     <arg name="interactive_marker"      value="false"/>
     <arg name="controller"              value="cartesian_impedance_example_controller"/>
-  </include> -->
+  </include>
 
-  <include file="$(find franka_control)/launch/panda_softbots.launch"
+  <!-- <include file="$(find franka_control)/launch/panda_softbots.launch"
             pass_all_args="true">
       <arg name="headless"                value="$(eval not arg('gazebo_gui'))"/>
       <arg name="use_gripper"             value="$(arg load_gripper)"/>
       <arg name="interactive_marker"      value="false"/>
       <arg name="controller"              value="cartesian_impedance_example_controller"/>
-    </include>
+    </include> -->
 
 
-
-  <node pkg="franka_art" type="hand_to_pose_alpha.py" name="whando_to_pose" output="screen">
-      </node>
+  <node pkg="franka_art" type="hand_to_pose_test.py" name="hand_to_pose" output="screen"> </node>
 
 
-  <node pkg="franka_art" type="gesture_recognizer_test.py" name="gesture_recognizer" output="screen">
+  <!-- <node pkg="franka_art" type="gesture_recognizer_test.py" name="gesture_recognizer" output="screen">
     <param name="model_path" value="$(find franka_art)/models/gesture_recognizer.task" />
-  </node>
+  </node> -->
 
 </launch>
