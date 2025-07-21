@@ -34,7 +34,7 @@
     </include> -->
 
 
-  <node pkg="franka_art" type="hand_to_pose_test.py" name="hand_to_pose" output="screen"> </node>
+  <node pkg="franka_art" type="hand_to_pose.py" name="hand_to_pose" output="screen"> </node>
 
 
   <!-- <node pkg="franka_art" type="gesture_recognizer_test.py" name="gesture_recognizer" output="screen">
