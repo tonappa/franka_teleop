@@ -37,7 +37,6 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/hand_to_pose.py
   scripts/gesture_recognizer.py
-  scripts/gesture_recognizer_test.py
 
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

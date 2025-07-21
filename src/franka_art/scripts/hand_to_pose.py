@@ -1,66 +1,50 @@
+#!/usr/bin/env python3
+
 import rospy
 import cv2
-import numpy as np
-from sensor_msgs.msg import Image
-from geometry_msgs.msg import PoseStamped
-from std_msgs.msg import Int32
-from franka_gripper.msg import GraspAction, HomingAction, MoveAction, GraspGoal, HomingGoal, MoveGoal
-from cv_bridge import CvBridge
 import mediapipe as mp
+import numpy as np
+import math
 import actionlib
 
-# Funzione helper per ridimensionare l'immagine
-def resize_display_image(image, width=854):  # 854x480 è un formato 16:9 comune
-    (h, w) = image.shape[:2]
-    r = width / float(w)
-    dim = (width, int(h * r))
-    return cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+from geometry_msgs.msg import PoseStamped
+from std_msgs.msg import Int32
+from franka_gripper.msg import GraspAction, GraspGoal, MoveAction, MoveGoal, HomingAction, HomingGoal
 
-class WristDepthViewer:
+class HandTrackerNode:
     def __init__(self):
-        rospy.init_node('hand2pose')
-        self.bridge = CvBridge()
+        rospy.init_node('hand_tracker_node', anonymous=True)
 
-        # Inizializzazione MediaPipe Hands
-        self.mp_hands = mp.solutions.hands
-        self.hands = self.mp_hands.Hands(max_num_hands=1,
-                                         min_detection_confidence=0.5,
-                                         min_tracking_confidence=0.5)
+        self.paused = True
+        self.reference_hand_pose = None
+        self.reference_hand_size = None # NEW: To store the reference hand size
+        self.last_gesture_id = -1
+        self.gripper_closed = False
+        
+        # Scaling factors
+        self.scale_factor_xy = 1.2
+        self.scale_factor_depth = 0.7 # MODIFIED: Scaling factor for depth
 
-        # Immagini
-        self.depth_image = None
-        self.color_image = None
+        self.win_width = 1024
+        self.win_height = 768
 
-        # Riferimento
-        self.ref_set = False
-        self.ref_u = self.ref_v = self.ref_depth = 0
-
-        # Gesto
-        self.last_gesture_id = None
-
-        # Timer mano
-        self.last_seen_time = rospy.Time.now()
-
-        # Scaling
-        self.scale_depth = 0.001  # mm → m
-        self.scale_xy = 0.001     # px → m
-
-        # Limiti workspace [m]
-        self.x_min, self.x_max = 0.1, 0.7
-        self.y_min, self.y_max = -0.4, 0.4
-        self.z_min, self.z_max = 0.1, 0.7
-
-        # Posizione iniziale
-        self.init_x, self.init_y, self.init_z = 0.4, 0.0, 0.4
-
-        # Tracking
-        self.tracking_active = True
-        self.display_status_text = ""
-        self.update_display_status_text()
-
-        # Gripper
-        self.gripper_closed = False 
-
+        # Publishers, Subscribers, Action Clients, Spawn Position
+        self.pose_publisher = rospy.Publisher(
+            '/cartesian_impedance_example_controller/equilibrium_pose',
+            PoseStamped,
+            queue_size=1
+        )
+        self.spawn_pose = PoseStamped()
+        self.spawn_pose.header.frame_id = 'panda_link0'
+        self.spawn_pose.pose.position.x = 0.3
+        self.spawn_pose.pose.position.y = 0.0
+        self.spawn_pose.pose.position.z = 0.4
+        self.spawn_pose.pose.orientation.x = 1.0
+        self.spawn_pose.pose.orientation.y = 0.0
+        self.spawn_pose.pose.orientation.z = 0.0
+        self.spawn_pose.pose.orientation.w = 0.0
+        self.target_pose = self.spawn_pose
+        rospy.Subscriber('/gesture', Int32, self.gesture_callback)
         self.grasp_client = actionlib.SimpleActionClient('/franka_gripper/grasp', GraspAction)
         self.move_client = actionlib.SimpleActionClient('/franka_gripper/move', MoveAction)
         self.homing_client = actionlib.SimpleActionClient('/franka_gripper/homing', HomingAction)
@@ -69,214 +53,169 @@ class WristDepthViewer:
         self.move_client.wait_for_server(rospy.Duration(5.0))
         self.homing_client.wait_for_server(rospy.Duration(5.0))
         rospy.loginfo("Franka_gripper action servers connected.")
-
-        # --- MODIFICHE QUI PER APRIRE IL GRIPPER ALL'AVVIO ---
-        rospy.sleep(0.5) # Piccolo ritardo per assicurarsi che i server siano pronti
+        rospy.sleep(0.5)
         rospy.loginfo("Performing homing and opening gripper to initial state...")
-        self.perform_homing() # Esegue l'homing per calibrare e aprire
-        self.perform_open()   # Assicurati che sia aperto dopo l'homing
-        # ----------------------------------------------------
-
-        # ROS I/O
-        self.pose_pub = rospy.Publisher(
-            '/cartesian_impedance_example_controller/equilibrium_pose',
-            PoseStamped, queue_size=10)
-        self.color_sub = rospy.Subscriber(
-            "/camera/color/image_raw", Image, self.color_callback,
-            queue_size=1, buff_size=2**24)
-        self.depth_sub = rospy.Subscriber(
-            "/camera/aligned_depth_to_color/image_raw", Image, self.depth_callback,
-            queue_size=1, buff_size=2**24)
-        self.gesture_sub = rospy.Subscriber(
-            "/gesture", Int32, self.gesture_callback, queue_size=10)
-
-    def depth_callback(self, msg):
-        self.depth_image = self.bridge.imgmsg_to_cv2(msg, "passthrough")
-
-    def color_callback(self, msg):
-        self.color_image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
-        self.process_frame()
+        self.perform_homing()
+        self.perform_open()
+        self.mp_hands = mp.solutions.hands
+        self.hands = self.mp_hands.Hands(
+            max_num_hands=1,
+            min_detection_confidence=0.7,
+            min_tracking_confidence=0.5
+        )
+        self.mp_drawing = mp.solutions.drawing_utils
+        self.cap = cv2.VideoCapture(0)
+        if not self.cap.isOpened():
+            rospy.logerr("Cannot open webcam.")
+            rospy.signal_shutdown("Webcam not found.")
 
     def gesture_callback(self, msg):
         gid = msg.data
-        if gid == self.last_gesture_id:
-            return
+        if gid == self.last_gesture_id: return
         self.last_gesture_id = gid
-        rospy.loginfo(f"Gesture: {gid}")
-        if gid == 1 and not self.gripper_closed:
-            self.perform_grasp() 
-        elif gid == 2 and self.gripper_closed:
-            self.perform_open() 
-        elif gid == 3:
-            self.reset_reference_and_robot_origin()
-        elif gid == 4:
-            self.toggle_tracking_standby()
+        rospy.loginfo(f"Received gesture: {gid}")
+        if gid == 1 and not self.gripper_closed: self.perform_grasp() 
+        elif gid == 2 and self.gripper_closed: self.perform_open() 
+        elif gid == 3: self.reset_reference_and_robot_origin()
+        elif gid == 4: self.toggle_tracking_standby()
 
     def perform_grasp(self):
-        rospy.loginfo("Grasping...")
-        goal = GraspGoal(width=0.04, speed=0.5, force=5.0)
+        rospy.loginfo("Executing GRASP...")
+        goal = GraspGoal(width=0.01, epsilon={'inner': 0.005, 'outer': 0.005}, speed=0.1, force=50)
         self.grasp_client.send_goal(goal)
-        finished_within_time = self.grasp_client.wait_for_result(rospy.Duration(5.0))
-        if finished_within_time:
-            state = self.grasp_client.get_state()
-            if state == actionlib.GoalStatus.SUCCEEDED:
-                rospy.loginfo("Grasp Succeeded!")
-                self.gripper_closed = True 
-            else:
-                rospy.logwarn(f"Grasp Failed with state: {self.grasp_client.get_state()}")
-        else:
-            rospy.logwarn("Grasp action did not finish before the timeout.")
+        if self.grasp_client.wait_for_result(rospy.Duration(5.0)) and self.grasp_client.get_result().success:
+            self.gripper_closed = True; rospy.loginfo("Grasp successful.")
+        else: rospy.logwarn("Grasp failed.")
 
     def perform_open(self):
-        rospy.loginfo("Opening...")
-        goal = MoveGoal(width=0.08, speed=1.0) 
+        rospy.loginfo("Executing OPEN...")
+        goal = MoveGoal(width=0.08, speed=0.1)
         self.move_client.send_goal(goal)
-        finished_within_time = self.move_client.wait_for_result(rospy.Duration(5.0))
-        if finished_within_time:
-            state = self.move_client.get_state()
-            if state == actionlib.GoalStatus.SUCCEEDED:
-                rospy.loginfo("Open Succeeded!")
-                self.gripper_closed = False 
-            else:
-                rospy.logwarn(f"Open Failed with state: {self.move_client.get_state()}")
-        else:
-            rospy.logwarn("Open action did not finish before the timeout.")
-
+        if self.move_client.wait_for_result(rospy.Duration(5.0)) and self.move_client.get_result().success:
+            self.gripper_closed = False; rospy.loginfo("Open successful.")
+        else: rospy.logwarn("Open failed.")
 
     def perform_homing(self):
-        rospy.loginfo("Homing...")
+        rospy.loginfo("Executing HOMING...")
         goal = HomingGoal()
         self.homing_client.send_goal(goal)
-        finished_within_time = self.homing_client.wait_for_result(rospy.Duration(10.0)) 
-        if finished_within_time:
-            state = self.homing_client.get_state()
-            if state == actionlib.GoalStatus.SUCCEEDED:
-                rospy.loginfo("Homing Succeeded! Gripper should be open.")
-                self.gripper_closed = False 
-            else:
-                rospy.logwarn(f"Homing Failed with state: {self.homing_client.get_state()}")
-        else:
-            rospy.logwarn("Homing action did not finish before the timeout.")
+        if self.homing_client.wait_for_result(rospy.Duration(10.0)) and self.homing_client.get_result().success:
+            rospy.loginfo("Homing successful.")
+        else: rospy.logwarn("Homing failed.")
 
     def reset_reference_and_robot_origin(self):
-        if self.color_image is None or self.depth_image is None:
-            rospy.logwarn("No images for reset")
-            return
-        frame = cv2.flip(self.color_image, 1)
-        dimg = cv2.flip(self.depth_image, 1)
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        res = self.hands.process(rgb)
-        if res.multi_hand_landmarks:
-            all_lms_x = [lm.x for lm in res.multi_hand_landmarks[0].landmark]
-            all_lms_y = [lm.y for lm in res.multi_hand_landmarks[0].landmark]
-            
-            h, w = frame.shape[:2]
-            
-            cx = int(np.mean(all_lms_x) * w)
-            cy = int(np.mean(all_lms_y) * h)
-            
-            if 0 <= cx < w and 0 <= cy < h:
-                d = int(dimg[cy, cx])
-                self.ref_u, self.ref_v, self.ref_depth = cx, cy, d
-                self.ref_set = True
-                self.init_x, self.init_y, self.init_z = 0.4, 0.0, 0.4
-                rospy.loginfo(f"Reset ref (Centroid): u,v,d=({cx},{cy},{d})")
-                self.update_display_status_text()
-                self.last_seen_time = rospy.Time.now()
-        else:
-            rospy.logwarn("No hand for reset")
+        rospy.loginfo("RESET: Robot position has been reset.")
+        self.reference_hand_pose = None
+        self.reference_hand_size = None # NEW: Also reset the size
+        self.target_pose = self.spawn_pose
+        self.target_pose.header.stamp = rospy.Time.now()
+        self.pose_publisher.publish(self.target_pose)
 
     def toggle_tracking_standby(self):
-        self.tracking_active = not self.tracking_active
-        if not self.tracking_active:
-            rospy.loginfo("Standby→initial")
-            self.publish_initial_pose()
+        self.paused = not self.paused
+        if self.paused:
+            rospy.loginfo("PAUSE: Tracking paused.")
+            self.reference_hand_pose = None
+            self.reference_hand_size = None # NEW: Also reset the size
         else:
-            rospy.loginfo("Tracking→active")
-        self.update_display_status_text()
-
-    def publish_initial_pose(self):
-        msg = PoseStamped()
-        msg.header.stamp = rospy.Time.now()
-        msg.header.frame_id = "panda_link0"
-        msg.pose.position.x, msg.pose.position.y, msg.pose.position.z = (
-            self.init_x, self.init_y, self.init_z)
-        msg.pose.orientation.x, msg.pose.orientation.y = 1.0,0.0
-        msg.pose.orientation.z, msg.pose.orientation.w = 0.0,0.0
-        self.pose_pub.publish(msg)
-
-    def update_display_status_text(self):
-        if not self.tracking_active:
-            self.display_status_text = (
-                f"STANDBY X:{self.init_x:.2f} Y:{self.init_y:.2f} Z:{self.init_z:.2f}")
-        else:
-            self.display_status_text = "TRACKING ACTIVE"
-
-    def process_frame(self):
-        if self.color_image is None or self.depth_image is None:
-            return
-        frame = cv2.flip(self.color_image,1)
-        dimg = cv2.flip(self.depth_image,1)
-        
-        hand_centroid = None 
-        
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        res = self.hands.process(rgb)
-        
-        if res.multi_hand_landmarks:
-            all_lms_x = [lm.x for lm in res.multi_hand_landmarks[0].landmark]
-            all_lms_y = [lm.y for lm in res.multi_hand_landmarks[0].landmark]
+            rospy.loginfo("START: Tracking active.")
             
-            h,w = frame.shape[:2]
-            
-            cx = int(np.mean(all_lms_x) * w)
-            cy = int(np.mean(all_lms_y) * h)
-            
-            if 0 <= cx < w and 0 <= cy < h:
-                hand_centroid = (cx, cy, int(dimg[cy, cx])) 
-                cv2.circle(frame,(cx,cy),6,(0,255,0),-1)
-                cv2.putText(frame,f"Depth: {hand_centroid[2]} mm",(cx+10,cy-10),
-                            cv2.FONT_HERSHEY_SIMPLEX,0.6,(0,255,0),2)
-                self.last_seen_time = rospy.Time.now()
-        
-        if rospy.Time.now()-self.last_seen_time>rospy.Duration(30):
-            rospy.loginfo("30s no hand, init pos")
-            self.publish_initial_pose()
-            self.last_seen_time = rospy.Time.now()
-        
-        if self.ref_set and hand_centroid and self.tracking_active:
-            dx = (self.ref_depth - hand_centroid[2]) * self.scale_depth
-            dy = (self.ref_u - hand_centroid[0]) * self.scale_xy
-            dz = (self.ref_v - hand_centroid[1]) * self.scale_xy
-            
-            x = min(max(self.x_min,self.init_x+dx),self.x_max)
-            y = min(max(self.y_min,self.init_y+dy),self.y_max)
-            z = min(max(self.z_min,self.init_z+dz),self.z_max)
-            
-            msg=PoseStamped()
-            msg.header.stamp=rospy.Time.now()
-            msg.header.frame_id="panda_link0"
-            msg.pose.position.x, msg.pose.position.y, msg.pose.position.z = x,y,z
-            msg.pose.orientation.x, msg.pose.orientation.y = 1.0,0.0
-            msg.pose.orientation.z, msg.pose.orientation.w = 0.0,0.0
-            self.pose_pub.publish(msg)
-        
-        cv2.putText(frame,self.display_status_text,(10,30),
-                    cv2.FONT_HERSHEY_SIMPLEX,0.7,(0,255,255),2)
-        st = "Closed" if self.gripper_closed else "Open"
-        cv2.putText(frame,f"Gripper: {st}",(10,60),
-                    cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,255,0),2)
-        disp=resize_display_image(frame,960)
-        cv2.imshow("RealSense Wrist Depth Viewer",disp)
-        k=cv2.waitKey(1)&0xFF
-        if k==27:
-            rospy.signal_shutdown("exit")
-        elif k==32:
-            self.reset_reference_and_robot_origin()
-
     def run(self):
-        rospy.spin()
+        rate = rospy.Rate(30)
+        while not rospy.is_shutdown():
+            success, image = self.cap.read()
+            if not success: continue
+
+            image = cv2.resize(image, (self.win_width, self.win_height))
+            image = cv2.flip(image, 1)
+            
+            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            results = self.hands.process(image_rgb)
+            image = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
+
+            if not self.paused and results.multi_hand_landmarks:
+                hand_landmarks = results.multi_hand_landmarks[0]
+
+                # Calculate centroid
+                cx, cy = 0, 0
+                for lm in hand_landmarks.landmark:
+                    cx += lm.x; cy += lm.y
+                centroid = {'x': cx / len(hand_landmarks.landmark), 'y': cy / len(hand_landmarks.landmark)}
+
+                # NEW: Calculate hand size
+                wrist_lm = hand_landmarks.landmark[self.mp_hands.HandLandmark.WRIST]
+                middle_finger_mcp_lm = hand_landmarks.landmark[self.mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
+                current_hand_size = math.sqrt(
+                    (wrist_lm.x - middle_finger_mcp_lm.x)**2 + 
+                    (wrist_lm.y - middle_finger_mcp_lm.y)**2
+                )
+                
+                # MODIFIED: Initial calibration logic
+                if self.reference_hand_pose is None:
+                    rospy.loginfo("Hand reference captured!")
+                    self.reference_hand_pose = centroid
+                    self.reference_hand_size = current_hand_size # Save reference size
+
+                # Calculate XY movement
+                delta_y = -(centroid['x'] - self.reference_hand_pose['x']) * self.scale_factor_xy
+                delta_z = -(centroid['y'] - self.reference_hand_pose['y']) * self.scale_factor_xy
+
+                # MODIFIED: Calculate depth (robot's X-axis) based on size. Direction is now INVERTED.
+                size_ratio = current_hand_size / self.reference_hand_size
+                delta_x = (size_ratio - 1.0) * self.scale_factor_depth # NEW: Moving closer (ratio>1) results in a positive delta_x (moves forward)
+
+                # Calculate and prepare pose message
+                current_pose = PoseStamped()
+                current_pose.header.stamp = rospy.Time.now()
+                current_pose.header.frame_id = self.spawn_pose.header.frame_id
+                current_pose.pose.position.x = self.spawn_pose.pose.position.x + delta_x
+                current_pose.pose.position.y = self.spawn_pose.pose.position.y + delta_y
+                current_pose.pose.position.z = self.spawn_pose.pose.position.z + delta_z
+                current_pose.pose.orientation = self.spawn_pose.pose.orientation
+                self.target_pose = current_pose
+                
+                # Draw hand landmarks
+                self.mp_drawing.draw_landmarks(image, hand_landmarks, self.mp_hands.HAND_CONNECTIONS)
+                
+                # NEW: Draw centroid and coordinates on the image
+                centroid_px = (int(centroid['x'] * self.win_width), int(centroid['y'] * self.win_height))
+                cv2.circle(image, centroid_px, 8, (0, 255, 0), -1) # Green dot for centroid
+                
+                coord_text = f"X:{self.target_pose.pose.position.x:.3f} Y:{self.target_pose.pose.position.y:.3f} Z:{self.target_pose.pose.position.z:.3f}"
+                cv2.putText(image, coord_text, (centroid_px[0] + 15, centroid_px[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+                
+            self.pose_publisher.publish(self.target_pose)
+            
+            # --- UI Display ---
+            # Status text
+            status_text = "PAUSED (Space)" if self.paused else "TRACKING (Space)"
+            cv2.putText(image, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+
+            # NEW: Usage instructions
+            instructions = [
+                "--- CONTROLS ---",
+                "[Q] - Quit",
+                "[Space] - Toggle Tracking",
+                "[C] - Reset Position"
+            ]
+            for i, line in enumerate(instructions):
+                cv2.putText(image, line, (10, 60 + i * 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
+
+            cv2.imshow('Hand Tracking Control', image)
+
+            key = cv2.waitKey(5) & 0xFF
+            if key == ord('q'): break
+            elif key == ord(' '): self.toggle_tracking_standby()
+            elif key == ord('c'): self.reset_reference_and_robot_origin()
+
+        self.cap.release()
         cv2.destroyAllWindows()
+        rospy.loginfo("Node terminated.")
+
 
 if __name__ == '__main__':
-    WristDepthViewer().run()
+    try:
+        node = HandTrackerNode()
+        node.run()
+    except rospy.ROSInterruptException:
+        pass

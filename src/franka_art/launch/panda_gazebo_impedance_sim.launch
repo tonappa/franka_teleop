@@ -37,7 +37,7 @@
   <node pkg="franka_art" type="hand_to_pose.py" name="hand_to_pose" output="screen"> </node>
 
 
-  <!-- <node pkg="franka_art" type="gesture_recognizer_test.py" name="gesture_recognizer" output="screen">
+  <!-- <node pkg="franka_art" type="gesture_recognizer.py" name="gesture_recognizer" output="screen">
     <param name="model_path" value="$(find franka_art)/models/gesture_recognizer.task" />
   </node> -->
 
