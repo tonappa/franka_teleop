@@ -1,23 +1,36 @@
 <?xml version="1.0"?>
 <launch>
 
-  <!-- Panda options -->
-  <arg name="arm_id"       default="panda" doc="Name of the panda robot to spawn" />
-  <arg name="load_gripper" default="true" />
-  <arg name="transmission" default="effort" />
+  <arg name="arm_id"        default="panda" doc="Name of the panda robot to spawn" />
+  <arg name="load_gripper"  default="true"  />
+  <arg name="transmission"  default="effort" />
 
-  <!-- Gazebo options -->
-  <arg name="gazebo_gui" default="true" doc="Start Gazebo GUI"/>
-  <arg name="paused" default="false" doc="Start Gazebo paused"/>
+  <arg name="gazebo_gui" default="true"  doc="Start Gazebo GUI"/>
+  <arg name="paused"     default="false" doc="Start Gazebo paused"/>
 
-  <!-- Launch the gazebo simulator and spawn the robot -->
-
-  <rosparam file="$(find franka_example_controllers)/config/franka_example_controllers.yaml" subst_value="true" />
-
-  <include file="$(find franka_gazebo)/launch/panda_teleop.launch" pass_all_args="true">
-    <arg name="headless" value="$(eval not arg('gazebo_gui'))" />
-    <arg name="use_gripper" default="$(arg load_gripper)" />
-    <arg name="controller" default="cartesian_impedance_example_controller" />
+  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+    <arg name="enable_color"  value="true"/>
+    <arg name="enable_depth"  value="true"/>
+    <arg name="align_depth"   value="true"/>
   </include>
+
+  <rosparam file="$(find franka_example_controllers)/config/franka_example_controllers.yaml"
+            subst_value="true"/>
+
+  <include file="$(find franka_gazebo)/launch/panda_softbots.launch"
+           pass_all_args="true">
+    <arg name="headless"                value="$(eval not arg('gazebo_gui'))"/>
+    <arg name="use_gripper"             value="$(arg load_gripper)"/>
+    <arg name="interactive_marker"      value="false"/>
+    <arg name="controller"              value="cartesian_impedance_example_controller"/>
+  </include>
+
+  <node pkg="franka_art" type="hand_to_pose_beta.py" name="whando_to_pose" output="screen">
+      </node>
+
+
+  <node pkg="franka_art" type="gesture_recognizer.py" name="gesture_recognizer" output="screen">
+    <param name="model_path" value="$(find franka_art)/models/gesture_recognizer.task" />
+  </node>
 
 </launch>

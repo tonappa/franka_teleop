@@ -94,12 +94,12 @@ cartesian_impedance_example_controller:
         - $(arg arm_id)_joint6
         - $(arg arm_id)_joint7
     stiffness:
-        x: 1000
-        y: 1000
-        z: 1000
-        rx: 50
-        ry: 50
-        rz: 50
+        x: 400 #1000
+        y: 400 #1000
+        z: 400 #1000
+        rx: 20 #50
+        ry: 20 #50
+        rz: 20 #50
 
 dual_arm_cartesian_impedance_example_controller:
     type: franka_example_controllers/DualArmCartesianImpedanceExampleController
@@ -162,3 +162,17 @@ teleop_joint_pd_example_controller:
        ddq_max_lower: [0.8, 0.8, 0.8, 0.8, 10.0, 10.0, 10.0] # [rad/s^2]
        ddq_max_upper: [6.0, 6.0, 6.0, 6.0, 15.0, 20.0, 20.0] # [rad/s^2]
        contact_force_threshold: 5.0 # [N]
+
+
+franka_state_controller:
+  type: franka_control/FrankaStateController
+  arm_id: $(arg arm_id)
+  publish_rate: 30  # [Hz]
+  joint_names:
+    - $(arg arm_id)_joint1
+    - $(arg arm_id)_joint2
+    - $(arg arm_id)_joint3
+    - $(arg arm_id)_joint4
+    - $(arg arm_id)_joint5
+    - $(arg arm_id)_joint6
+    - $(arg arm_id)_joint7
