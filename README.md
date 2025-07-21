@@ -24,38 +24,37 @@ The workspace contains the following key ROS packages:
 
 ### Prerequisites
 
-* **Docker** and **Docker Compose**
+* **Docker** 
 * An NVIDIA GPU with drivers and **NVIDIA Container Toolkit** for Docker (if using GPU acceleration for vision nodes).
 * ROS Noetic (The Docker environment provides this).
-
-### Dependencies
-
-* **ROS Dependencies**: `roscpp`, `rospy`, `tf2_ros`, `sensor_msgs`, `moveit_core`, `moveit_ros_planning_interface`.
-* **System Libraries**: `python3-opencv`, `python3-mediapipe`
 
 ### Build Instructions
 
 1.  **Clone the Repository**
     ```bash
-    git clone [URL_DEL_TUO_REPOSITORY]
-    cd [NOME_DELLA_CARTELLA_DEL_REPO]
+    cd ~/Desktop/
+    git clone git@github.com:tonappa/franka_teleop.git
+    cd ~/Desktop/franka_teleop
     ```
 
 2.  **Build the Docker Image**
     ```bash
-    docker-compose build
+    ~/Desktop/franka_teleop
+    ./docker/build.sh
     ```
 
 3.  **Run the Docker Container**
     To start the container and get a bash terminal inside it:
     ```bash
-    docker-compose run --rm ros_workspace bash
+    cd ~/Desktop/franka_teleop
+    ./docker/run.sh
     ```
     *Note: All subsequent commands should be run inside the Docker container's terminal.*
 
 4.  **Build the ROS Workspace**
     Inside the container, compile the packages:
     ```bash
+    cd ~/Desktop/franka_teleop
     source /opt/ros/noetic/setup.bash
     catkin_make
     source devel/setup.bash
@@ -69,9 +68,11 @@ To launch the simulation environment, run the following command from the root of
 
 ```bash
 roslaunch franka_art panda_gazebo_impedence_sim.launch
+```
 This will start Gazebo, spawn the Franka Emika Panda robot, and launch all the necessary nodes for the teleoperation.
 
-🔧 Nodes and Scripts (franka_art)
+
+## 🔧 Nodes and Scripts (franka_art)
 hand_to_pose.py
 This is the core script for the vision-based teleoperation. It performs the following key functions:
 
