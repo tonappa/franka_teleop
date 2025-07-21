@@ -1,145 +1,119 @@
-# 🚀 franka_teleop — Dockerized ROS Workspace
+# Franka Emika Panda Teleoperation Workspace
 
-> Docker-based workspace for **teleoperating the Franka Emika Panda** robot using **Cartesian impedance control**, with mouse- or webcam-based teleoperation.  
-> Designed to evolve towards **MoveIt Servo**.
+## Overview
 
----
+This ROS workspace enables the teleoperation of the Franka Emika Panda robot using **Cartesian impedance control**. The primary teleoperation input is a standard webcam for hand pose and gesture recognition, with experimental support for Intel RealSense cameras under development.
 
-## ✨ Features
+The project is built within a Dockerized environment to ensure portability and ease of setup. It is designed with future evolution in mind, specifically to integrate with **MoveIt Servo** for more advanced real-time control.
 
-- ✅ **ROS 1 Noetic** support (easily configurable for ROS 2)  
-- ✅ **Pre-configured development environment** (NVIDIA drivers, MoveIt!, Gazebo, RealSense)  
-- ✅ **Flexible teleoperation** via mouse or webcam  
-- ✅ **Shared workspace** between host and container  
-- ✅ **Main branches**:  
-  - `main` → Cartesian impedance control using `TwistStamped` messages with `franka_ros`  
-  - `servo` (to be created) → MoveIt Servo development with `TwistStamped`  
+This repository is developed by [IL TUO NOME/NOME TEAM] as part of [NOME PROGETTO/LABORATORIO, es. PhD research at the "Enrico Piaggio" Research Center].
 
 ---
 
-## 📂 Project Structure
+## 📦 Packages
 
+The workspace contains the following key ROS packages:
 
-```plaintext
-franka_teleop/
-├── docker/
-│   ├── Dockerfile         # Base image definition
-│   ├── build.bash         ## Build the Docker image
-│   ├── run.bash           # Launch the Docker container
-├── src/
-│   ├── franka_art/              # Custom teleoperation & controllers
-│   ├── franka_ros/              # Driver ufficiale Franka
-│   ├── panda_moveit_config/     # Config MoveIt! per Panda
-├── scripts/
-│   ├── mouse_to_pose.py         # Mouse-based teleoperation
-│   ├── hand_to_pose_v1.py       # Webcam-based teleoperation (in development)
-```
-
+* `franka_ros`: Core packages for Franka Emika robot integration with ROS.
+* `panda_moveit_config`: Standard MoveIt configuration for the Panda robot.
+* `franka_art`: Custom package for vision-based teleoperation. It includes nodes for:
+    * **Hand Pose Estimation**: Detects the operator's hand from the webcam feed.
+    * **Gesture Recognition**: Interprets hand gestures to control the robot's end-effector (e.g., grasp/release).
 
 ---
 
-## 🧰 Dependencies
+## 🛠️ Setup and Installation
 
-### System Packages
+### Prerequisites
 
-- `bash-completion`  
-- `build-essential`  
-- `git`  
-- `gedit` (or your favorite editor)  
-- `sudo`  
-- `wget`, `curl`  
-- `python3-pip`, `python3-tk`
+* **Docker** and **Docker Compose**
+* An NVIDIA GPU with drivers and **NVIDIA Container Toolkit** for Docker (if using GPU acceleration for vision nodes).
+* ROS Noetic (The Docker environment provides this).
 
-### Python Packages
+### Dependencies
 
-- `pyrealsense2`  
-- `opencv-python`  
-- `pandas`  
-- `mediapipe`
+* **ROS Dependencies**: `roscpp`, `rospy`, `tf2_ros`, `sensor_msgs`, `moveit_core`, `moveit_ros_planning_interface`.
+* **System Libraries**: `[DA COMPLETARE, es. OpenCV, librealsense2-dev, etc.]`
 
-### ROS Noetic Packages
+### Build Instructions
 
-- `ros-noetic-catkin`  
-- `python3-catkin-tools`  
-- `python3-osrf-pycommon`  
-- `ros-noetic-moveit`  
-- `ros-noetic-gazebo-ros`  
-- `ros-noetic-gazebo-ros-control`  
-- `ros-noetic-gazebo-ros-pkgs`  
-- `ros-noetic-gazebo-plugins`  
-- `ros-noetic-realsense2-camera`  
-- `ros-noetic-realsense2-description`  
+1.  **Clone the Repository**
+    ```bash
+    git clone [URL_DEL_TUO_REPOSITORY]
+    cd [NOME_DELLA_CARTELLA_DEL_REPO]
+    ```
 
-> **Note:** After first container launch, install the Franka ROS driver manually:
-> ```bash
-> sudo apt update && sudo apt upgrade
-> sudo apt install ros-noetic-franka-ros
-> ```
+2.  **Build the Docker Image**
+    ```bash
+    docker-compose build
+    ```
 
----
+3.  **Run the Docker Container**
+    To start the container and get a bash terminal inside it:
+    ```bash
+    docker-compose run --rm ros_workspace bash
+    ```
+    *Note: All subsequent commands should be run inside the Docker container's terminal.*
 
-## ⚙️ Build & Run
-
-1. **Build the Docker image**  
-   ```bash
-   cd ~/Desktop/franka_teleop
-   ./docker/build.bash
-
-
->⚙️ **Extra:** Edit docker/build.bash to change the image name or ROS version if needed.
-
-
-2. **Launch the container**
-```bash
-cd ~/Desktop/franka_teleop
-./docker/run.bash
-```
-
-3. **First-time setup inside the container**
-```bash
-sudo apt update && sudo apt upgrade
-sudo apt install ros-noetic-franka-ros
-```
----
-
-## 🕹️ **Teleoperation**
-### 🖱️ **Mouse-Based Teleop**
-
-1. In the container, launch the impedance controller::
-```bash
-roslaunch franka_art panda_gazebo_impedance.launch
-```
-2. In a second terminal (host or container), run::
-```bash
-rosrun franka_art mouse_to_pose.py
-```
-
-### 📷 **Webcam-Based Teleop**
-
->⚠️ **Limitation**: Only planar (XY) motion is supported; Z-axis movement is not implemented due to depth estimation constraints.
-
-1. Launch the same impedance controller:
-```bash
-roslaunch franka_art panda_gazebo_impedance.launch
-```
-2. In another terminal, run:
-```bash
-rosrun franka_art hand_to_pose_v1.py
-```
+4.  **Build the ROS Workspace**
+    Inside the container, compile the packages:
+    ```bash
+    source /opt/ros/noetic/setup.bash
+    catkin_make
+    source devel/setup.bash
+    ```
 
 ---
 
-## 🔭 **Roadmap**
-- ✅  Refine Cartesian impedance control on the 'main' branch
+## 🚀 Usage
 
-- 🚧  Develop MoveIt Servo teleoperation (PoseTwist) on a dedicated 'servo' branch
-  
+To run the full teleoperation pipeline, you need to launch several components.
+
+1.  **Launch the Robot Interface**
+    In a terminal inside the container, launch the connection to the Franka robot (or a simulation):
+    ```bash
+    # [DA COMPLETARE - Inserisci il comando esatto]
+    # Esempio:
+    roslaunch franka_control franka_control.launch robot_ip:=<robot_ip>
+    ```
+
+2.  **Launch MoveIt**
+    In a second terminal:
+    ```bash
+    # [DA COMPLETARE - Inserisci il comando esatto]
+    # Esempio:
+    roslaunch panda_moveit_config demo.launch
+    ```
+
+3.  **Launch the Vision and Teleoperation Node**
+    Finally, start the hand recognition and impedance control script from the `franka_art` package:
+    ```bash
+    # [DA COMPLETARE - Inserisci il comando esatto]
+    # Esempio:
+    roslaunch franka_art vision_teleop.launch
+    ```
+    Now, point the webcam at your hand. The robot should mirror your hand's movements in real-time.
+
 ---
 
-## ⚡ **Technical Notes**
-- The current impedance controller subscribes to 'geometry_msgs/PoseStamped' for pose targets.
-- MoveIt Servo integration will use 'geometry_msgs/PoseTwist' for velocity-based control.
-- Webcam tracking is limited to the first quadrant of the XY-plane until reliable depth estimation is implemented.
+## 🔧 Nodes and Scripts (franka_art)
 
+#### `hand_pose_estimator.py`
+* **Description**: This script uses OpenCV to capture images from the webcam, detect the operator's hand, and calculate its 3D position relative to the camera.
+* **Publishes**:
+    * `/hand_pose` (`geometry_msgs/PoseStamped`): The target pose for the robot's end-effector.
+* **Subscribes**:
+    * `/camera/image_raw` (`sensor_msgs/Image`): Raw image feed.
 
+#### `gesture_recognizer.py`
+* **Description**: Analyzes the hand pose to recognize specific gestures, like a closed fist for grasping.
+* **Publishes**:
+    * `/gripper_command` (`std_msgs/Bool`): `True` to close the gripper, `False` to open it.
 
+---
+
+## Future Work
+
+* [ ] Fully integrate and test the Intel RealSense camera for improved depth perception.
+* [ ] Transition the core control logic from the current implementation to **MoveIt Servo**.
+* [ ] [DA COMPLETARE - Altri obiettivi futuri]
