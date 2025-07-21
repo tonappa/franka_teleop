@@ -2,11 +2,11 @@
 
 ## Overview
 
-This ROS workspace enables the teleoperation of the Franka Emika Panda robot using **Cartesian impedance control**. The primary teleoperation input is a standard webcam for hand pose and gesture recognition, with experimental support for Intel RealSense cameras under development.
+This ROS workspace enables the teleoperation of the Franka Emika Panda robot using **Cartesian impedance control**. The primary teleoperation input is a standard webcam for hand pose recognition.
 
 The project is built within a Dockerized environment to ensure portability and ease of setup. It is designed with future evolution in mind, specifically to integrate with **MoveIt Servo** for more advanced real-time control.
 
-This repository is developed by [IL TUO NOME/NOME TEAM] as part of [NOME PROGETTO/LABORATORIO, es. PhD research at the "Enrico Piaggio" Research Center].
+This repository is developed by **Do Won Park** as part of PhD research at the "Enrico Piaggio" Research Center, University of Pisa.
 
 ---
 
@@ -16,9 +16,7 @@ The workspace contains the following key ROS packages:
 
 * `franka_ros`: Core packages for Franka Emika robot integration with ROS.
 * `panda_moveit_config`: Standard MoveIt configuration for the Panda robot.
-* `franka_art`: Custom package for vision-based teleoperation. It includes nodes for:
-    * **Hand Pose Estimation**: Detects the operator's hand from the webcam feed.
-    * **Gesture Recognition**: Interprets hand gestures to control the robot's end-effector (e.g., grasp/release).
+* `franka_art`: Custom package for vision-based teleoperation and simulation.
 
 ---
 
@@ -33,7 +31,7 @@ The workspace contains the following key ROS packages:
 ### Dependencies
 
 * **ROS Dependencies**: `roscpp`, `rospy`, `tf2_ros`, `sensor_msgs`, `moveit_core`, `moveit_ros_planning_interface`.
-* **System Libraries**: `[DA COMPLETARE, es. OpenCV, librealsense2-dev, etc.]`
+* **System Libraries**: `python3-opencv`, `python3-mediapipe`
 
 ### Build Instructions
 
@@ -67,53 +65,29 @@ The workspace contains the following key ROS packages:
 
 ## 🚀 Usage
 
-To run the full teleoperation pipeline, you need to launch several components.
+To launch the simulation environment, run the following command from the root of your workspace (inside the Docker container):
 
-1.  **Launch the Robot Interface**
-    In a terminal inside the container, launch the connection to the Franka robot (or a simulation):
-    ```bash
-    # [DA COMPLETARE - Inserisci il comando esatto]
-    # Esempio:
-    roslaunch franka_control franka_control.launch robot_ip:=<robot_ip>
-    ```
+```bash
+roslaunch franka_art panda_gazebo_impedence_sim.launch
+This will start Gazebo, spawn the Franka Emika Panda robot, and launch all the necessary nodes for the teleoperation.
 
-2.  **Launch MoveIt**
-    In a second terminal:
-    ```bash
-    # [DA COMPLETARE - Inserisci il comando esatto]
-    # Esempio:
-    roslaunch panda_moveit_config demo.launch
-    ```
+🔧 Nodes and Scripts (franka_art)
+hand_to_pose.py
+This is the core script for the vision-based teleoperation. It performs the following key functions:
 
-3.  **Launch the Vision and Teleoperation Node**
-    Finally, start the hand recognition and impedance control script from the `franka_art` package:
-    ```bash
-    # [DA COMPLETARE - Inserisci il comando esatto]
-    # Esempio:
-    roslaunch franka_art vision_teleop.launch
-    ```
-    Now, point the webcam at your hand. The robot should mirror your hand's movements in real-time.
+Initializes a ROS Node: Sets up the main node to communicate within the ROS ecosystem.
 
----
+Captures Webcam Feed: Uses OpenCV to access the webcam stream.
 
-## 🔧 Nodes and Scripts (franka_art)
+Hand Landmark Detection: Processes each frame with the MediaPipe Hands library to detect the position and landmarks of the operator's hand in real-time.
 
-#### `hand_pose_estimator.py`
-* **Description**: This script uses OpenCV to capture images from the webcam, detect the operator's hand, and calculate its 3D position relative to the camera.
-* **Publishes**:
-    * `/hand_pose` (`geometry_msgs/PoseStamped`): The target pose for the robot's end-effector.
-* **Subscribes**:
-    * `/camera/image_raw` (`sensor_msgs/Image`): Raw image feed.
+Pose Transformation: Translates the 2D pixel coordinates of the hand's center into a 3D target pose (geometry_msgs/PoseStamped). This target pose is then used as the goal for the robot's end-effector.
 
-#### `gesture_recognizer.py`
-* **Description**: Analyzes the hand pose to recognize specific gestures, like a closed fist for grasping.
-* **Publishes**:
-    * `/gripper_command` (`std_msgs/Bool`): `True` to close the gripper, `False` to open it.
+Publishes the Target Pose: Publishes the calculated 3D pose to the /cartesian_impedance_controller/target_pose topic, which is read by the impedance controller to move the robot.
 
----
+Future Work
+[ ] Fully integrate and test the Intel RealSense camera for improved depth perception.
 
-## Future Work
+[ ] Transition the core control logic from the current implementation to MoveIt Servo.
 
-* [ ] Fully integrate and test the Intel RealSense camera for improved depth perception.
-* [ ] Transition the core control logic from the current implementation to **MoveIt Servo**.
-* [ ] [DA COMPLETARE - Altri obiettivi futuri]
+[ ] Add gesture recognition for gripper control (open/close).
