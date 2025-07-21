@@ -73,7 +73,7 @@ This will start Gazebo, spawn the Franka Emika Panda robot, and launch all the n
 
 
 ## 🔧 Nodes and Scripts (franka_art)
-hand_to_pose.py
+#### `hand_to_pose.py`
 This is the core script for the vision-based teleoperation. It performs the following key functions:
 
 Initializes a ROS Node: Sets up the main node to communicate within the ROS ecosystem.
@@ -82,13 +82,15 @@ Captures Webcam Feed: Uses OpenCV to access the webcam stream.
 
 Hand Landmark Detection: Processes each frame with the MediaPipe Hands library to detect the position and landmarks of the operator's hand in real-time.
 
-Pose Transformation: Translates the 2D pixel coordinates of the hand's center into a 3D target pose (geometry_msgs/PoseStamped). This target pose is then used as the goal for the robot's end-effector.
+Pose Transformation: Translates the 2D pixel coordinates of the hand's center into a 3D target pose (`geometry_msgs/PoseStamped`). This target pose is then used as the goal for the robot's end-effector.
 
-Publishes the Target Pose: Publishes the calculated 3D pose to the /cartesian_impedance_controller/target_pose topic, which is read by the impedance controller to move the robot.
+Publishes the Target Pose: Publishes the calculated 3D pose to the `/cartesian_impedance_controller/target_pose topic`, which is read by the impedance controller to move the robot.
+
+---
 
 Future Work
-[ ] Fully integrate and test the Intel RealSense camera for improved depth perception.
+## Future Work
 
-[ ] Transition the core control logic from the current implementation to MoveIt Servo.
-
-[ ] Add gesture recognition for gripper control (open/close).
+* [ ] Fully integrate and test the Intel RealSense camera for improved depth perception.
+* [ ] Transition the core control logic from the current implementation to **MoveIt Servo**.
+* [ ] [DA COMPLETARE - Altri obiettivi futuri]
