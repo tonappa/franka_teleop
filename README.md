@@ -1,22 +1,26 @@
-# Franka Emika Panda Teleoperation Workspace
+# 🤖 Franka Emika Panda Teleoperation Workspace
 
-## Overview
+A ROS workspace for real-time teleoperation of the Franka Emika Panda robot using **Cartesian impedance control**, with hand tracking from a standard webcam as the primary input.
 
-This ROS workspace enables the teleoperation of the Franka Emika Panda robot using **Cartesian impedance control**. The primary teleoperation input is a standard webcam for hand pose recognition.
-
-The project is built within a Dockerized environment to ensure portability and ease of setup. It is designed with future evolution in mind, specifically to integrate with **MoveIt Servo** for more advanced real-time control.
-
-This repository is developed by **Do Won Park** as part of PhD research at the "Enrico Piaggio" Research Center, University of Pisa.
+This project is developed within a **Dockerized environment** to ensure portability and ease of setup. It is designed with future evolution in mind, specifically to integrate with **MoveIt Servo** for more advanced real-time control.
 
 ---
 
-## 📦 Packages
+## 👤 Author
 
-The workspace contains the following key ROS packages:
+* **Do Won Park** ([@tonappa](https://github.com/tonappa))
+
+This repository is developed as part of PhD research at the "Enrico Piaggio" Research Center, University of Pisa, in collaboration with the Italian Institute of Technology (IIT).
+
+---
+
+## 📦 Core Packages
+
+The workspace is organized into the following key ROS packages:
 
 * `franka_ros`: Core packages for Franka Emika robot integration with ROS.
 * `panda_moveit_config`: Standard MoveIt configuration for the Panda robot.
-* `franka_art`: Custom package for vision-based teleoperation and simulation.
+* `franka_art`: A custom package containing the logic for vision-based teleoperation, simulation setup, and control nodes.
 
 ---
 
@@ -24,13 +28,15 @@ The workspace contains the following key ROS packages:
 
 ### Prerequisites
 
-* **Docker** 
-* An NVIDIA GPU with drivers and **NVIDIA Container Toolkit** for Docker (if using GPU acceleration for vision nodes).
-* ROS Noetic (The Docker environment provides this).
+* **Docker**
+* An **NVIDIA GPU** with up-to-date drivers.
+* **NVIDIA Container Toolkit** for Docker (required for GPU acceleration).
+* **ROS Noetic** (provided by the Docker environment).
 
 ### Build Instructions
 
 1.  **Clone the Repository**
+    Clone the project to your machine (e.g., on your Desktop).
     ```bash
     cd ~/Desktop/
     git clone git@github.com:tonappa/franka_teleop.git
@@ -38,25 +44,31 @@ The workspace contains the following key ROS packages:
     ```
 
 2.  **Build the Docker Image**
+    Use the provided script to build the Docker image. This will install all necessary dependencies.
     ```bash
-    ~/Desktop/franka_teleop
     ./docker/build.sh
     ```
 
 3.  **Run the Docker Container**
-    To start the container and get a bash terminal inside it:
+    Start the container to get an interactive bash terminal inside the pre-configured environment.
     ```bash
-    cd ~/Desktop/franka_teleop
     ./docker/run.sh
     ```
-    *Note: All subsequent commands should be run inside the Docker container's terminal.*
+    > **Note**: All subsequent commands must be run inside the Docker container's terminal.
 
 4.  **Build the ROS Workspace**
-    Inside the container, compile the packages:
+    Inside the container, compile the catkin workspace.
     ```bash
+    # Navigate to the workspace root inside the container
     cd ~/Desktop/franka_teleop
+    
+    # Source the base ROS environment
     source /opt/ros/noetic/setup.bash
+    
+    # Build the packages
     catkin_make
+    
+    # Source your new workspace to use its packages
     source devel/setup.bash
     ```
 
@@ -64,33 +76,36 @@ The workspace contains the following key ROS packages:
 
 ## 🚀 Usage
 
-To launch the simulation environment, run the following command from the root of your workspace (inside the Docker container):
+To launch the complete simulation environment, run the main launch file from the root of your workspace (inside the Docker container):
 
 ```bash
 roslaunch franka_art panda_gazebo_impedence_sim.launch
-```
-This will start Gazebo, spawn the Franka Emika Panda robot, and launch all the necessary nodes for the teleoperation.
 
+This command will:
 
-## 🔧 Nodes and Scripts (franka_art)
-#### `hand_to_pose.py`
-This is the core script for the vision-based teleoperation. It performs the following key functions:
+Start the Gazebo simulator.
 
-Initializes a ROS Node: Sets up the main node to communicate within the ROS ecosystem.
+Spawn the Franka Emika Panda robot model.
 
-Captures Webcam Feed: Uses OpenCV to access the webcam stream.
+Launch all the necessary nodes for vision-based teleoperation and control.
 
-Hand Landmark Detection: Processes each frame with the MediaPipe Hands library to detect the position and landmarks of the operator's hand in real-time.
+##  🔧 Key Nodes and Scripts (franka_art)
+`hand_to_pose.py`
+This is the core script for vision-based teleoperation. It performs the following functions:
 
-Pose Transformation: Translates the 2D pixel coordinates of the hand's center into a 3D target pose (`geometry_msgs/PoseStamped`). This target pose is then used as the goal for the robot's end-effector.
+*Initializes a ROS Node*: Sets up the node to communicate within the ROS ecosystem.
 
-Publishes the Target Pose: Publishes the calculated 3D pose to the `/cartesian_impedance_controller/target_pose topic`, which is read by the impedance controller to move the robot.
+*Captures Webcam Feed*: Uses OpenCV to access the live video stream from a webcam.
 
----
+*Hand Landmark Detection*: Processes each frame with the MediaPipe Hands library to detect the operator's hand and its key landmarks in real-time.
 
-Future Work
-## Future Work
+*Pose Transformation*: Translates the 2D pixel coordinates of the hand into a 3D target pose (geometry_msgs/PoseStamped) for the robot's end-effector.
 
-* [ ] Fully integrate and test the Intel RealSense camera for improved depth perception.
-* [ ] Transition the core control logic from the current implementation to **MoveIt Servo**.
-* [ ] [DA COMPLETARE - Altri obiettivi futuri]
+*Publishes Target Pose*: Publishes the calculated 3D pose to the /cartesian_impedance_controller/target_pose topic, which is consumed by the impedance controller to drive the robot's motion.
+
+✨ Future Work
+[ ] Fully integrate and test an Intel RealSense camera for improved depth perception and tracking robustness.
+
+[ ] Transition the core control logic from the current implementation to MoveIt Servo for enhanced performance and features.
+
+[ ] [DA COMPLETARE - Altri obiettivi futuri]
