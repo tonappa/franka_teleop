@@ -8,11 +8,11 @@
   <arg name="gazebo_gui" default="true"  doc="Start Gazebo GUI"/>
   <arg name="paused"     default="false" doc="Start Gazebo paused"/>
 
-  <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+  <!-- <include file="$(find realsense2_camera)/launch/rs_camera.launch">
     <arg name="enable_color"  value="true"/>
     <arg name="enable_depth"  value="true"/>
     <arg name="align_depth"   value="true"/>
-  </include>
+  </include> -->
 
   <rosparam file="$(find franka_example_controllers)/config/franka_example_controllers.yaml"
             subst_value="true"/>
