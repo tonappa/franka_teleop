@@ -46,13 +46,13 @@ The workspace is organized into the following key ROS packages:
 2.  **Build the Docker Image**
     Use the provided script to build the Docker image. This will install all necessary dependencies.
     ```bash
-    ./docker/build.sh
+    ./docker/build.bash
     ```
 
 3.  **Run the Docker Container**
     Start the container to get an interactive bash terminal inside the pre-configured environment.
     ```bash
-    ./docker/run.sh
+    ./docker/run.bash
     ```
     > **Note**: All subsequent commands must be run inside the Docker container's terminal.
 
