@@ -25,12 +25,12 @@
     <arg name="controller"              value="cartesian_impedance_example_controller"/>
   </include>
 
-  <node pkg="franka_art" type="hand_to_pose_beta.py" name="whando_to_pose" output="screen">
+  <node pkg="shared_autonomy" type="hand_to_pose_beta.py" name="whando_to_pose" output="screen">
       </node>
 
 
-  <node pkg="franka_art" type="gesture_recognizer.py" name="gesture_recognizer" output="screen">
-    <param name="model_path" value="$(find franka_art)/models/gesture_recognizer.task" />
+  <node pkg="shared_autonomy" type="gesture_recognizer.py" name="gesture_recognizer" output="screen">
+    <param name="model_path" value="$(find shared_autonomy)/models/gesture_recognizer.task" />
   </node>
 
 </launch>

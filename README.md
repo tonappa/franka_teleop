@@ -30,7 +30,7 @@ The workspace is organized into the following key ROS packages:
     Clone the project to your machine (e.g., on your `Desktop`).
     ```bash
     cd ~/Desktop/
-    git clone --branch SharedAutonomy_main git@github.com:tonappa/franka_teleop.git
+	git clone --branch SharedAutonomy_main https://github.com/tonappa/franka_teleop.git
     cd ~/Desktop/franka_teleop
     ```
 
@@ -84,6 +84,7 @@ This command will:
 Run the interface to change the assistive parameter (blanding parameter)
 
 ```bash
+chmod +x src/shared_autonomy/scripts/param_interface.py # To make it executable
 rosrun shared_autonomy param_interface.py
 ```
 You can set the parameter at the beginning of the script to either directly change the parameter through the interface (True), or require a confirmation button (False).

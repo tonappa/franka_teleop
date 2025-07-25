@@ -68,18 +68,18 @@
     <arg name="align_depth" value="true"/>
   </include>
 
-  <!-- NODI FRANKA_ART -->
-  <node pkg="franka_art"
+  <!-- NODI shared_autonomy -->
+  <node pkg="shared_autonomy"
         type="hand_to_pose.py"
         name="hand_to_pose"
         output="screen"/>
 
-  <node pkg="franka_art"
+  <node pkg="shared_autonomy"
         type="gesture_recognizer_test.py"
         name="gesture_recognizer"
         output="screen">
     <param name="model_path"
-           value="$(find franka_art)/models/gesture_recognizer.task"/>
+           value="$(find shared_autonomy)/models/gesture_recognizer.task"/>
   </node>
 
 

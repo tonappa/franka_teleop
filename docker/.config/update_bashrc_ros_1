@@ -2,4 +2,4 @@
 echo "" >> ~/.bashrc
 echo "## ROS" >> ~/.bashrc
 echo 'source /opt/ros/$ROS_DISTRO/setup.bash' >> ~/.bashrc
-echo 'source ~/Desktop/franka-art/devel/setup.bash' >> ~/.bashrc
+#echo 'source ~/Desktop/franka-art/devel/setup.bash' >> ~/.bashrc

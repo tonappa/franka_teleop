@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>franka_art</name>
+  <name>shared_autonomy</name>
   <version>0.0.0</version>
-  <description>The franka_art package</description>
+  <description>The shared_autonomy package</description>
 
   <maintainer email="tonappa@todo.todo">tonappa</maintainer>
   <license>TODO</license>

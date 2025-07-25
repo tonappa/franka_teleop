@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
 import tkinter as tk
 from tkinter import ttk
 import os
 from tkinter import PhotoImage
 from PIL import Image
+import signal
+
 
 # === Configurazione iniziale ===
 online_editing_enabled = False  # Setta a True per modifiche in tempo reale
@@ -96,5 +99,8 @@ if online_editing_enabled:
 else:
     slider.config(command=None)  # disattiva callback diretta
     confirm_button.pack(pady=10)  # mostra bottone solo se non in online
+
+# Consente la chiusura con Ctrl+C da terminale
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 root.mainloop()

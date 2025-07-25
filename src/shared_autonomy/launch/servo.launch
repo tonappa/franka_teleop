@@ -1,19 +1,19 @@
 <launch>
   <!-- config file directories -->
-  <arg name="config_servo"           default="$(find franka_art)/config/servo.yaml"/>
-  <arg name="controllers_file"       default="$(find franka_art)/config/controllers.yaml"/>
+  <arg name="config_servo"           default="$(find shared_autonomy)/config/servo.yaml"/>
+  <arg name="controllers_file"       default="$(find shared_autonomy)/config/controllers.yaml"/>
 
   <!-- Args -->
   <arg name="controller_type"  value="position_joint_trajectory_controller"/>
   <arg name="rviz"           value="false" />
 
-  <node pkg="franka_art" type="hand_to_pose_test.py" name="hand_to_pose_test" output="screen">
+  <node pkg="shared_autonomy" type="hand_to_pose_test.py" name="hand_to_pose_test" output="screen">
 
   <!-- Load controller list -->
   <rosparam file="$(arg controllers_file)" command="load" subst_value="true"/>
 
   <!-- launch robot -->
-  <include file="$(find franka_art)/launch/panda_servo.launch">
+  <include file="$(find shared_autonomy)/launch/panda_servo.launch">
     <arg name="controller" value="$(arg controller_type)"/>
   </include>
 
