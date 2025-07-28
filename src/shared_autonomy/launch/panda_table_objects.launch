@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- Include Panda + Gazebo -->
+  <include file="$(find franka_gazebo)/launch/panda.launch" />
+
+  <node name="table1" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-sdf -file $(find panda_gazebo_models)/models/table/model.sdf -model table1 -x 0.5 -y 0.7 -z 0.0 -Y 0.785" />
+
+  <node name="block1" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-sdf -file $(find panda_gazebo_models)/models/wood_cube_10cm/model.sdf -model block1 -x 1 -y 0.5 -z 0.3" />
+
+</launch>

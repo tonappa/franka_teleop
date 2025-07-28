@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+  <world name="panda_world">
+
+    <!-- Luce -->
+    <include>
+      <uri>model://sun</uri>
+    </include>
+
+    <!-- Piano -->
+    <include>
+      <uri>model://ground_plane</uri>
+    </include>
+
+    <!-- Tavolo 1 -->
+    <include>
+      <uri>model://table</uri>
+      <pose>1 0 0 0 0 0</pose>
+    </include>
+
+    <!-- Tavolo 2 -->
+    <include>
+      <uri>model://table</uri>
+      <pose>-1 0 0 0 0 0</pose>
+    </include>
+
+    <!-- Oggetto 1 -->
+    <include>
+      <uri>model://block</uri>
+      <pose>1 0.5 0.75 0 0 0</pose>
+    </include>
+
+    <!-- Oggetto 2 -->
+    <include>
+      <uri>model://block</uri>
+      <pose>1 0.6 0.75 0 0 0</pose>
+    </include>
+
+    <!-- Oggetto 3 -->
+    <include>
+      <uri>model://block</uri>
+      <pose>1 0.7 0.75 0 0 0</pose>
+    </include>
+
+  </world>
+</sdf>
