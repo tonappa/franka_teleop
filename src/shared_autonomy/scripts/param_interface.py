@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
+
 import tkinter as tk
-from tkinter import ttk
-import os
 from tkinter import PhotoImage
 from PIL import Image
+import os
 import signal
 
+import rospy
+from std_msgs.msg import Float32
+
+# === ROS NODE ===
+rospy.init_node('blending_slider_gui', anonymous=True)
+pub = rospy.Publisher('/blending_param', Float32, queue_size=10)
 
 # === Configurazione iniziale ===
-online_editing_enabled = False  # Setta a True per modifiche in tempo reale
+online_editing_enabled = rospy.get_param('~online_editing_enabled', False)
+print(f"Online editing enabled: {online_editing_enabled}")
+
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 icon_path = os.path.join(script_dir, "..", "icon", "volume.png")
@@ -73,7 +81,14 @@ slider = tk.Scale(
 slider.set(0.5)
 slider.pack(pady=10)
 
-# === Bottone di conferma (solo in modalità offline) ===
+# === Funzione di pubblicazione ===
+def on_slider_change(value):
+    value = float(value)
+    value_label.config(text=f"Value: {value:.2f}")
+    rospy.loginfo(f"Publishing blending value: {value:.2f}")
+    pub.publish(Float32(data=value))
+
+# === Bottone di conferma (offline mode) ===
 def confirm_value():
     val = float(slider.get())
     on_slider_change(val)
@@ -83,24 +98,19 @@ confirm_button = tk.Button(
     text="Confirm Changes",
     font=("Helvetica", 14, "bold"),
     command=confirm_value,
-    bg="#4CAF50",
+    bg="#22A927",
     fg="white"
 )
 
-# === Callback slider ===
-def on_slider_change(value):
-    value = float(value)
-    value_label.config(text=f"Value: {value:.2f}")
-    print(f"Value confirmed: {value:.2f}")
-
 # === Gestione modalità ===
 if online_editing_enabled:
-    slider.config(command=lambda val: on_slider_change(val))  # callback attiva
+    slider.config(command=on_slider_change)
 else:
-    slider.config(command=None)  # disattiva callback diretta
-    confirm_button.pack(pady=10)  # mostra bottone solo se non in online
+    slider.config(command=None)
+    confirm_button.pack(pady=10)
 
-# Consente la chiusura con Ctrl+C da terminale
+# Permetti chiusura con Ctrl+C
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
+# === Avvia GUI ===
 root.mainloop()

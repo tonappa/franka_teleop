@@ -70,7 +70,7 @@ The workspace is organized into the following key ROS packages:
 To launch the complete simulation environment, run the main launch file from the root of your workspace (inside the Docker container):
 
 ```bash
-roslaunch shared_autonomy panda_gazebo_impedence_sim.launch
+roslaunch shared_autonomy shared_autonomy.launch
 ```
 
 This command will:
@@ -81,13 +81,16 @@ This command will:
 
 - Launch all the necessary nodes for vision-based teleoperation and control.
 
-Run the interface to change the assistive parameter (blanding parameter)
+- Open the GUI to change dinamically the blending parameter. You can set the parameter `online_editing_enabled` in the launch file to either directly change the parameter through the interface (True), or require a confirmation button (False).
+
+- Run the shared autonomy algorithm to blend the robot autonomy and the user command. 
+
+If you have trouble running the script, you probably need to make it executable. For example:
 
 ```bash
-chmod +x src/shared_autonomy/scripts/param_interface.py # To make it executable
-rosrun shared_autonomy param_interface.py
+chmod +x src/shared_autonomy/scripts/param_interface.py # To 
 ```
-You can set the parameter at the beginning of the script to either directly change the parameter through the interface (True), or require a confirmation button (False).
+
 
 
 ##  🔧 Key Nodes and Scripts (shared_autonomy)
@@ -105,4 +108,8 @@ This is the core script for vision-based teleoperation. It performs the followin
 *Publishes Target Pose*: Publishes the calculated 3D pose to the /cartesian_impedance_controller/target_pose topic, which is consumed by the impedance controller to drive the robot's motion.
 
 `param_interface.py`
-This is the script for open the user interface to change the bladning parameter for the assistances level.
+This is the script to open the user interface to change the bladning parameter for the assistances level.
+
+
+`shared_autonomy.py`
+This is the script to run the shared autonomy algorithm to blend the teleoperator (human command) and the robot autonomy.

@@ -36,6 +36,9 @@ include_directories(
 ## Installazione script Python
 catkin_install_python(PROGRAMS
   scripts/hand_to_pose.py
+  scripts/shared_autonomy.py
+  scripts/gripper_close.py
+  scripts/param_interface.py
   scripts/gesture_recognizer.py
 
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

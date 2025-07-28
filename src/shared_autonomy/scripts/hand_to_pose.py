@@ -9,7 +9,8 @@ import actionlib
 
 from geometry_msgs.msg import PoseStamped
 from std_msgs.msg import Int32
-from franka_gripper.msg import GraspAction, GraspGoal, MoveAction, MoveGoal, HomingAction, HomingGoal
+from franka_gripper.msg import GraspAction, GraspGoal, MoveAction, MoveGoal, HomingAction, HomingGoal, GraspEpsilon
+
 
 class HandTrackerNode:
     def __init__(self):
@@ -29,8 +30,13 @@ class HandTrackerNode:
         self.win_height = 768
 
         # Publishers, Subscribers, Action Clients, Spawn Position
+        # self.pose_publisher = rospy.Publisher(
+        #     '/cartesian_impedance_example_controller/equilibrium_pose',
+        #     PoseStamped,
+        #     queue_size=1
+        # )
         self.pose_publisher = rospy.Publisher(
-            '/cartesian_impedance_example_controller/equilibrium_pose',
+            '/teleop_pose',
             PoseStamped,
             queue_size=1
         )
@@ -79,13 +85,18 @@ class HandTrackerNode:
         elif gid == 3: self.reset_reference_and_robot_origin()
         elif gid == 4: self.toggle_tracking_standby()
 
+
     def perform_grasp(self):
         rospy.loginfo("Executing GRASP...")
-        goal = GraspGoal(width=0.01, epsilon={'inner': 0.005, 'outer': 0.005}, speed=0.1, force=50)
+        goal = GraspGoal()
+        goal.width = 0.0
+        goal.epsilon = GraspEpsilon(inner=0.01, outer=0.01)
+        goal.speed = 0.1
+        goal.force = 5.0
         self.grasp_client.send_goal(goal)
-        if self.grasp_client.wait_for_result(rospy.Duration(5.0)) and self.grasp_client.get_result().success:
-            self.gripper_closed = True; rospy.loginfo("Grasp successful.")
-        else: rospy.logwarn("Grasp failed.")
+        self.grasp_client.wait_for_result()
+        self.gripper_closed = True
+
 
     def perform_open(self):
         rospy.loginfo("Executing OPEN...")
@@ -124,11 +135,12 @@ class HandTrackerNode:
         rate = rospy.Rate(30)
         while not rospy.is_shutdown():
             success, image = self.cap.read()
-            if not success: continue
+            if not success:
+                continue
 
             image = cv2.resize(image, (self.win_width, self.win_height))
             image = cv2.flip(image, 1)
-            
+
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             results = self.hands.process(image_rgb)
             image = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
@@ -139,32 +151,33 @@ class HandTrackerNode:
                 # Calculate centroid
                 cx, cy = 0, 0
                 for lm in hand_landmarks.landmark:
-                    cx += lm.x; cy += lm.y
+                    cx += lm.x
+                    cy += lm.y
                 centroid = {'x': cx / len(hand_landmarks.landmark), 'y': cy / len(hand_landmarks.landmark)}
 
-                # NEW: Calculate hand size
+                # Calculate hand size
                 wrist_lm = hand_landmarks.landmark[self.mp_hands.HandLandmark.WRIST]
                 middle_finger_mcp_lm = hand_landmarks.landmark[self.mp_hands.HandLandmark.MIDDLE_FINGER_MCP]
                 current_hand_size = math.sqrt(
-                    (wrist_lm.x - middle_finger_mcp_lm.x)**2 + 
-                    (wrist_lm.y - middle_finger_mcp_lm.y)**2
+                    (wrist_lm.x - middle_finger_mcp_lm.x) ** 2 +
+                    (wrist_lm.y - middle_finger_mcp_lm.y) ** 2
                 )
-                
-                # MODIFIED: Initial calibration logic
+
+                # Initial calibration logic
                 if self.reference_hand_pose is None:
                     rospy.loginfo("Hand reference captured!")
                     self.reference_hand_pose = centroid
-                    self.reference_hand_size = current_hand_size # Save reference size
+                    self.reference_hand_size = current_hand_size
 
                 # Calculate XY movement
                 delta_y = -(centroid['x'] - self.reference_hand_pose['x']) * self.scale_factor_xy
                 delta_z = -(centroid['y'] - self.reference_hand_pose['y']) * self.scale_factor_xy
 
-                # MODIFIED: Calculate depth (robot's X-axis) based on size. Direction is now INVERTED.
+                # Calculate depth (robot's X-axis) based on size (inverted direction)
                 size_ratio = current_hand_size / self.reference_hand_size
-                delta_x = (size_ratio - 1.0) * self.scale_factor_depth # NEW: Moving closer (ratio>1) results in a positive delta_x (moves forward)
+                delta_x = (size_ratio - 1.0) * self.scale_factor_depth
 
-                # Calculate and prepare pose message
+                # Prepare pose message
                 current_pose = PoseStamped()
                 current_pose.header.stamp = rospy.Time.now()
                 current_pose.header.frame_id = self.spawn_pose.header.frame_id
@@ -173,30 +186,26 @@ class HandTrackerNode:
                 current_pose.pose.position.z = self.spawn_pose.pose.position.z + delta_z
                 current_pose.pose.orientation = self.spawn_pose.pose.orientation
                 self.target_pose = current_pose
-                
-                # Draw hand landmarks
+
+                # Draw landmarks and centroid
                 self.mp_drawing.draw_landmarks(image, hand_landmarks, self.mp_hands.HAND_CONNECTIONS)
-                
-                # NEW: Draw centroid and coordinates on the image
                 centroid_px = (int(centroid['x'] * self.win_width), int(centroid['y'] * self.win_height))
-                cv2.circle(image, centroid_px, 8, (0, 255, 0), -1) # Green dot for centroid
-                
+                cv2.circle(image, centroid_px, 8, (0, 255, 0), -1)
                 coord_text = f"X:{self.target_pose.pose.position.x:.3f} Y:{self.target_pose.pose.position.y:.3f} Z:{self.target_pose.pose.position.z:.3f}"
                 cv2.putText(image, coord_text, (centroid_px[0] + 15, centroid_px[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
-                
+
             self.pose_publisher.publish(self.target_pose)
-            
-            # --- UI Display ---
-            # Status text
+
+            # Display status and controls
             status_text = "PAUSED (Space)" if self.paused else "TRACKING (Space)"
             cv2.putText(image, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
-            # NEW: Usage instructions
             instructions = [
                 "--- CONTROLS ---",
                 "[Q] - Quit",
                 "[Space] - Toggle Tracking",
-                "[C] - Reset Position"
+                "[C] - Reset Position",
+                "[G] - Close or Open the Gripper"
             ]
             for i, line in enumerate(instructions):
                 cv2.putText(image, line, (10, 60 + i * 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
@@ -204,9 +213,18 @@ class HandTrackerNode:
             cv2.imshow('Hand Tracking Control', image)
 
             key = cv2.waitKey(5) & 0xFF
-            if key == ord('q'): break
-            elif key == ord(' '): self.toggle_tracking_standby()
-            elif key == ord('c'): self.reset_reference_and_robot_origin()
+            if key == ord('q'):
+                break
+            elif key == ord(' '):
+                self.toggle_tracking_standby()
+            elif key == ord('c'):
+                self.reset_reference_and_robot_origin()
+            elif key == ord('g'):
+                if not self.gripper_closed:
+                    self.perform_grasp()
+                elif self.gripper_closed:
+                    self.perform_open()
+
 
         self.cap.release()
         cv2.destroyAllWindows()

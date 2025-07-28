@@ -1,0 +1,15 @@
+<launch>
+
+  <!-- Run the node with interface to change the blending parameter for shared autonomy -->
+  <node pkg="shared_autonomy" type="param_interface.py" name="param_interface" output="screen">
+    <param name="online_editing_enabled" value="True"/>
+  </node>
+
+  <!-- Run the node with shared autonomy function -->
+  <node pkg="shared_autonomy" type="shared_autonomy.py" name="shared_autonomy" output="screen"> 
+  </node>
+
+  <!-- Include the teleoperation launch file with hand tracking and gripper closer-->
+  <include file="$(find shared_autonomy)/launch/teleop_hand_tracking.launch"/>
+
+</launch>
