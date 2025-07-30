@@ -1,0 +1,39 @@
+<launch>
+
+
+
+
+  <!-- Argomenti: posizione cilindro1 -->
+  <!-- <arg name="cube1_x" default="0.4" />
+  <arg name="cube1_y" default="0.4" />
+  <arg name="cube1_z" default="0.37" /> -->
+
+
+  <!-- Argomenti: posizione cilindro2 -->
+  <!-- <arg name="cube2_x" default="0.6" />
+  <arg name="cube2_y" default="0.2" />
+  <arg name="cube2_z" default="0.37" /> -->
+
+  <!-- Esporta anche come parametri rosparam per usarli nei tuoi nodi -->
+  <!-- <param name="cubes/positions/cube1" value="$(arg cube1_x) $(arg cube1_y) $(arg cube1_z)" />
+  <param name="cubes/positions/cube2" value="$(arg cube2_x) $(arg cube2_y) $(arg cube2_z)" /> -->
+
+ <!-- Spawn dei tavoli -->
+  <!-- <node name="table1" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-sdf -file $(find panda_gazebo_models)/models/table/model.sdf -model table1 -x 0.4 -y 0.4 -z 0.0 -Y 2.285" />
+  <node name="table2" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-sdf -file $(find panda_gazebo_models)/models/table/model.sdf -model table2 -x 0.4 -y -0.4 -z 0.0 -Y 0.785" /> -->
+ <!-- Spawn dei cubi -->
+  <!-- <node name="cube1" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-sdf -file $(find panda_gazebo_models)/models/red_cube/model.sdf -model cube1 -x $(arg cube1_x) -y $(arg cube1_y) -z $(arg cube1_z)" />
+
+  <node name="cube2" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-sdf -file $(find panda_gazebo_models)/models/blue_cube/model.sdf -model cube2 -x $(arg cube2_x) -y $(arg cube2_y) -z $(arg cube2_z)" /> -->
+
+
+
+  <!-- Run the node with robot autonomy -->
+  <node pkg="shared_autonomy" type="robot_autonomy.py" name="robot_autonomy" output="screen"> 
+  </node>
+
+</launch>

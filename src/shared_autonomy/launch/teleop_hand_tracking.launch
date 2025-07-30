@@ -4,44 +4,54 @@
   <arg name="arm_id"        default="panda" doc="Name of the panda robot to spawn" />
   <arg name="load_gripper"  default="true"  />
   <arg name="transmission"  default="effort" />
+  <arg name="world_name" default=""/>
+
+  <!-- <include file="$(find gazebo_ros)/launch/empty_world.launch">
+  <arg name="world_name" value="$(find shared_autonomy)/worlds/franka_custom.world"/>
+</include> -->
+
+
 
   <arg name="gazebo_gui" default="true"  doc="Start Gazebo GUI"/>
   <arg name="paused"     default="false" doc="Start Gazebo paused"/>
 
+
   <!-- Argomenti: posizione cilindro1 -->
-  <arg name="cylinder1_x" default="0.4" />
-  <arg name="cylinder1_y" default="0.4" />
-  <arg name="cylinder1_z" default="0.37" />
+  <arg name="cube1_x" default="0.4" />
+  <arg name="cube1_y" default="0.4" />
+  <arg name="cube1_z" default="0.37" />
+
 
   <!-- Argomenti: posizione cilindro2 -->
-  <arg name="cylinder2_x" default="0.6" />
-  <arg name="cylinder2_y" default="0.2" />
-  <arg name="cylinder2_z" default="0.37" />
+  <arg name="cube2_x" default="0.6" />
+  <arg name="cube2_y" default="0.2" />
+  <arg name="cube2_z" default="0.37" />
 
   <!-- Argomenti: posizione cilindro3 -->
-  <arg name="cylinder3_x" default="0.2" />
+  <!-- <arg name="cylinder3_x" default="0.2" />
   <arg name="cylinder3_y" default="0.6" />
-  <arg name="cylinder3_z" default="0.37" />
+  <arg name="cylinder3_z" default="0.37" /> -->
 
   <!-- Esporta anche come parametri rosparam per usarli nei tuoi nodi -->
-  <param name="cylinders/positions/cylinder1" value="$(arg cylinder1_x) $(arg cylinder1_y) $(arg cylinder1_z)" />
-  <param name="cylinders/positions/cylinder2" value="$(arg cylinder2_x) $(arg cylinder2_y) $(arg cylinder2_z)" />
-  <param name="cylinders/positions/cylinder3" value="$(arg cylinder3_x) $(arg cylinder3_y) $(arg cylinder3_z)" />
+  <param name="cubes/positions/cube1" value="$(arg cube1_x) $(arg cube1_y) $(arg cube1_z)" />
+  <param name="cubes/positions/cube2" value="$(arg cube2_x) $(arg cube2_y) $(arg cube2_z)" />
+  <!-- <param name="cylinders/positions/cylinder3" value="$(arg cylinder3_x) $(arg cylinder3_y) $(arg cylinder3_z)" -->
+  
 
  <!-- Spawn dei tavoli -->
   <node name="table1" pkg="gazebo_ros" type="spawn_model" output="screen"
         args="-sdf -file $(find panda_gazebo_models)/models/table/model.sdf -model table1 -x 0.4 -y 0.4 -z 0.0 -Y 2.285" />
   <node name="table2" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-sdf -file $(find panda_gazebo_models)/models/table/model.sdf -model table2 -x 0.4 -y -0.4 -z 0.0 -Y 0.785" />
- <!-- Spawn dei cilindri -->
-  <node name="cylinder1" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-sdf -file $(find panda_gazebo_models)/models/red_cylinder_small/model.sdf -model cylinder1 -x $(arg cylinder1_x) -y $(arg cylinder1_y) -z $(arg cylinder1_z)" />
+        args="-sdf -file $(find panda_gazebo_models)/models/table_with_cross/model.sdf -model table2 -x 0.4 -y -0.4 -z 0.0 -Y 0.785" />
+ <!-- Spawn dei cubi -->
+  <node name="cube1" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-sdf -file $(find panda_gazebo_models)/models/red_cube/model.sdf -model cube1 -x $(arg cube1_x) -y $(arg cube1_y) -z $(arg cube1_z)" />
 
-  <node name="cylinder2" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-sdf -file $(find panda_gazebo_models)/models/green_cylinder_small/model.sdf -model cylinder2 -x $(arg cylinder2_x) -y $(arg cylinder2_y) -z $(arg cylinder2_z)" />
+  <node name="cube2" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-sdf -file $(find panda_gazebo_models)/models/blue_cube/model.sdf -model cube2 -x $(arg cube2_x) -y $(arg cube2_y) -z $(arg cube2_z)" />
 
-  <node name="cylinder3" pkg="gazebo_ros" type="spawn_model" output="screen"
-        args="-sdf -file $(find panda_gazebo_models)/models/blue_cylinder_small/model.sdf -model cylinder3 -x $(arg cylinder3_x) -y $(arg cylinder3_y) -z $(arg cylinder3_z)" />
+  <!-- <node name="cylinder3" pkg="gazebo_ros" type="spawn_model" output="screen"
+        args="-sdf -file $(find panda_gazebo_models)/models/blue_cylinder_small/model.sdf -model cylinder3 -x $(arg cylinder3_x) -y $(arg cylinder3_y) -z $(arg cylinder3_z)" /> -->
 
 
   <!-- <node name="block1" pkg="gazebo_ros" type="spawn_model" output="screen"
@@ -80,5 +90,6 @@
   <!-- <node pkg="shared_autonomy" type="gesture_recognizer.py" name="gesture_recognizer" output="screen">
     <param name="model_path" value="$(find shared_autonomy)/models/gesture_recognizer.task" />
   </node> -->
+
 
 </launch>

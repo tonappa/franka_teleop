@@ -6,12 +6,13 @@ from std_msgs.msg import Float32
 
 
 # Inizializza le variabili globali
-teleop_pose = None
+teleop_pose   = None
 autonomy_pose = None
-blending_param = 0.5  # Fattore di blending iniziale
+blending_param = rospy.get_param('/shared_autonomy/initial_blending_param', 0.5) # Fattore di blending iniziale
 
 
- # Callback to update the teleoperation pose
+
+# Callback to update the teleoperation pose
 def teleop_pose_callback(msg):
     global teleop_pose
     teleop_pose = msg
@@ -53,9 +54,9 @@ def blending_function(teleop_pose, autonomy_pose, blending_factor):
     blended_pose.pose.orientation.z /= norm
 
     # Log per debug
-    rospy.loginfo(f"Blended Pose: {blended_pose.pose.position.x}, {blended_pose.pose.position.y}, {blended_pose.pose.position.z}, "
-                  f"{blended_pose.pose.orientation.w}, {blended_pose.pose.orientation.x}, "
-                  f"{blended_pose.pose.orientation.y}, {blended_pose.pose.orientation.z}")  
+    # rospy.loginfo(f"Blended Pose: {blended_pose.pose.position.x}, {blended_pose.pose.position.y}, {blended_pose.pose.position.z}, "
+    #               f"{blended_pose.pose.orientation.x}, {blended_pose.pose.orientation.y}, "
+    #               f"{blended_pose.pose.orientation.z}, {blended_pose.pose.orientation.w}")  
     
     return blended_pose
 
@@ -78,14 +79,14 @@ def main():
     while not rospy.is_shutdown():
 
         # Costruisci un messaggio PoseStamped 
-        msg = PoseStamped()
-        msg.header.stamp = rospy.Time.now()
-        msg.header.frame_id = "panda_link0"
+        blended_pose = PoseStamped()
+        blended_pose.header.stamp = rospy.Time.now()
+        blended_pose.header.frame_id = "panda_link0"
  
         # I valori di teleop_pose e autonomy_pose vengono aggiornati tramite subscriber
         global teleop_pose, autonomy_pose
         
-        autonomy_pose = teleop_pose
+        # autonomy_pose = teleop_pose
 
         # Assicurati che entrambi i messaggi siano stati ricevuti prima di procedere
         if teleop_pose is None or autonomy_pose is None:
@@ -96,17 +97,19 @@ def main():
 
         # Blending function application
         blended_pose = blending_function(teleop_pose, autonomy_pose, blending_param)
-        print(f"Blending parameter: {blending_param:.2f}")
-        print(f"Teleop Pose: {teleop_pose.pose.position.x}, {teleop_pose.pose.position.y}, {teleop_pose.pose.position.z}")
+        # print(f"Blending parameter: {blending_param:.2f}")
+        # print(f"Teleop Pose: {teleop_pose.pose.position.x}, {teleop_pose.pose.position.y}, {teleop_pose.pose.position.z}")
         print(f"Autonomy Pose: {autonomy_pose.pose.position.x}, {autonomy_pose.pose.position.y}, {autonomy_pose.pose.position.z}")
-        print(f"Blended Pose: {blended_pose.pose.position.x}, {blended_pose.pose.position.y}, {blended_pose.pose.position.z}")
+        # print(f"Blended Pose: {blended_pose.pose.position.x}, {blended_pose.pose.position.y}, {blended_pose.pose.position.z}")
 
         # Publish the PoseStamped message
         blended_pose.header.stamp = rospy.Time.now()
-        rospy.loginfo("Publishing target pose...")
+        # rospy.loginfo("Publishing target pose...")
         pub.publish(blended_pose)
 
         rate.sleep()
+
+
 
 if __name__ == "__main__":
     try:

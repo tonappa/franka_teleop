@@ -14,8 +14,12 @@ rospy.init_node('blending_slider_gui', anonymous=True)
 pub = rospy.Publisher('/blending_param', Float32, queue_size=10)
 
 # === Configurazione iniziale ===
-online_editing_enabled = rospy.get_param('~online_editing_enabled', False)
+online_editing_enabled = rospy.get_param('/param_interface/online_editing_enabled', False)
 print(f"Online editing enabled: {online_editing_enabled}")
+
+
+blending_param_init = rospy.get_param('/shared_autonomy/initial_blending_param', 0.5) # Fattore di blending iniziale
+print(f"Initial blending parameter: {blending_param_init}")
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -56,7 +60,7 @@ title_label.pack(side="left", padx=10)
 # === Etichetta valore ===
 value_label = tk.Label(
     main_frame,
-    text="Value: 0.50",
+    text="Value: {:.2f}".format(blending_param_init),
     font=("Helvetica", 18, "bold"),
     fg="#FF6961",
     bg="#161515"
@@ -78,7 +82,7 @@ slider = tk.Scale(
     troughcolor="white",
     font=("Helvetica", 12, "bold")
 )
-slider.set(0.5)
+slider.set(blending_param_init)  # Set initial value from parameter
 slider.pack(pady=10)
 
 # === Funzione di pubblicazione ===

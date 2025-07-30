@@ -1,15 +1,27 @@
 <launch>
 
-  <!-- Run the node with interface to change the blending parameter for shared autonomy -->
-  <node pkg="shared_autonomy" type="param_interface.py" name="param_interface" output="screen">
-    <param name="online_editing_enabled" value="True"/>
-  </node>
+  <arg name="initial_blending_param"  default="0.5"  />
+  <arg name="online_editing_enabled"  default="True" />
+  <arg name="blending_param_GUI"      default="True" />
 
-  <!-- Run the node with shared autonomy function -->
-  <node pkg="shared_autonomy" type="shared_autonomy.py" name="shared_autonomy" output="screen"> 
-  </node>
+  <!-- Run the node with interface to change the blending parameter for shared autonomy -->
+  <group if="$(arg blending_param_GUI)">
+    <node pkg="shared_autonomy" type="param_interface.py" name="param_interface" output="screen">
+      <param name="online_editing_enabled" value="$(arg online_editing_enabled)"/>
+    </node>
+  </group>
 
   <!-- Include the teleoperation launch file with hand tracking and gripper closer-->
   <include file="$(find shared_autonomy)/launch/teleop_hand_tracking.launch"/>
+
+  <!-- Include the robot autonomy launch file -->
+  <include file="$(find shared_autonomy)/launch/robot_autonomy.launch"/>
+
+  <!-- Run the node with shared autonomy function -->
+  <node pkg="shared_autonomy" type="shared_autonomy.py" name="shared_autonomy" output="screen"> 
+      <param name="initial_blending_param" value="$(arg initial_blending_param)"/>
+  </node>
+
+
 
 </launch>

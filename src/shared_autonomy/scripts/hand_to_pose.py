@@ -12,6 +12,15 @@ from std_msgs.msg import Int32
 from franka_gripper.msg import GraspAction, GraspGoal, MoveAction, MoveGoal, HomingAction, HomingGoal, GraspEpsilon
 
 
+ 
+# Extract the initial pose from the YAML file
+initial_pose = rospy.get_param('/shared_autonomy/initial_pose', {
+    'position': {'x': 0.3, 'y': 0.0, 'z': 0.4},
+    'orientation': {'x': 1.0, 'y': 0.0, 'z': 0.0, 'w': 0.0}
+})
+print(f"Initial pose loaded: {initial_pose}")
+
+
 class HandTrackerNode:
     def __init__(self):
         rospy.init_node('hand_tracker_node', anonymous=True)
@@ -42,13 +51,13 @@ class HandTrackerNode:
         )
         self.spawn_pose = PoseStamped()
         self.spawn_pose.header.frame_id = 'panda_link0'
-        self.spawn_pose.pose.position.x = 0.3
-        self.spawn_pose.pose.position.y = 0.0
-        self.spawn_pose.pose.position.z = 0.4
-        self.spawn_pose.pose.orientation.x = 1.0
-        self.spawn_pose.pose.orientation.y = 0.0
-        self.spawn_pose.pose.orientation.z = 0.0
-        self.spawn_pose.pose.orientation.w = 0.0
+        self.spawn_pose.pose.position.x = initial_pose['position']['x']
+        self.spawn_pose.pose.position.y = initial_pose['position']['y']
+        self.spawn_pose.pose.position.z = initial_pose['position']['z']
+        self.spawn_pose.pose.orientation.x = initial_pose['orientation']['x']
+        self.spawn_pose.pose.orientation.y = initial_pose['orientation']['y']
+        self.spawn_pose.pose.orientation.z = initial_pose['orientation']['z']
+        self.spawn_pose.pose.orientation.w = initial_pose['orientation']['w']
         self.target_pose = self.spawn_pose
         rospy.Subscriber('/gesture', Int32, self.gesture_callback)
         self.grasp_client = actionlib.SimpleActionClient('/franka_gripper/grasp', GraspAction)
@@ -132,7 +141,7 @@ class HandTrackerNode:
             rospy.loginfo("START: Tracking active.")
             
     def run(self):
-        rate = rospy.Rate(30)
+        rate = rospy.Rate(15)
         while not rospy.is_shutdown():
             success, image = self.cap.read()
             if not success:
