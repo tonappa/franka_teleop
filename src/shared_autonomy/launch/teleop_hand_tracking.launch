@@ -11,6 +11,7 @@
 </include> -->
 
 
+<arg name="world" default="$(find shared_autonomy)/worlds/franka_custom.world" />
 
   <arg name="gazebo_gui" default="true"  doc="Start Gazebo GUI"/>
   <arg name="paused"     default="false" doc="Start Gazebo paused"/>

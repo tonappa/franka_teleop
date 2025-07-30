@@ -33,13 +33,23 @@
        />
   <arg name="interactive_marker" default="$(eval arg('controller') == 'cartesian_impedance_example_controller')" doc="Should the interactive marker node be started?" />
 
-  <include file="$(find gazebo_ros)/launch/empty_world.launch" if="$(arg gazebo)">
+
+
+<include file="$(find gazebo_ros)/launch/empty_world.launch" if="$(arg gazebo)">
     <arg name="world_name" value="$(arg world)"/>
     <!-- Always start in paused mode, and only unpause when spawning the model -->
     <arg name="paused" value="true"/>
     <arg name="gui" value="$(eval not arg('headless'))"/>
     <arg name="use_sim_time" value="true"/>
   </include>
+  <!-- <include file="$(find gazebo_ros)/launch/empty_world.launch" if="$(arg gazebo)">
+    <arg name="world_name" value="$(arg world)"/> -->
+    <!-- Always start in paused mode, and only unpause when spawning the model -->
+    <!-- <arg name="paused" value="true"/>
+    <arg name="gui" value="$(eval not arg('headless'))"/>
+    <arg name="use_sim_time" value="true"/>
+  </include> --> 
+
 
   <param name="robot_description"
          command="xacro $(find franka_description)/robots/panda/panda.urdf.xacro

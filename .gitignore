@@ -7,3 +7,6 @@ devel/
 log/
 
 franka_teleop.bundle/
+
+shared_autonomy/bags/*
+!shared_autonomy/bags/.gitkeep
