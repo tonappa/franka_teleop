@@ -22,6 +22,9 @@
       <param name="initial_blending_param" value="$(arg initial_blending_param)"/>
   </node>
 
+  <node pkg="rosbag" type="record" name="rosbag_record_franka"
+        args="-o $(find shared_autonomy)/bags/franka_data /joint_states /tf /tf_static /franka_state_controller/franka_states"
+        output="screen"/>
 
 
 </launch>

@@ -6,12 +6,7 @@
   <arg name="transmission"  default="effort" />
   <arg name="world_name" default=""/>
 
-  <!-- <include file="$(find gazebo_ros)/launch/empty_world.launch">
-  <arg name="world_name" value="$(find shared_autonomy)/worlds/franka_custom.world"/>
-</include> -->
-
-
-<arg name="world" default="$(find shared_autonomy)/worlds/franka_custom.world" />
+  <arg name="world" default="$(find shared_autonomy)/worlds/franka_custom.world" />
 
   <arg name="gazebo_gui" default="true"  doc="Start Gazebo GUI"/>
   <arg name="paused"     default="false" doc="Start Gazebo paused"/>
@@ -91,6 +86,9 @@
   <!-- <node pkg="shared_autonomy" type="gesture_recognizer.py" name="gesture_recognizer" output="screen">
     <param name="model_path" value="$(find shared_autonomy)/models/gesture_recognizer.task" />
   </node> -->
+
+
+
 
 
 </launch>
