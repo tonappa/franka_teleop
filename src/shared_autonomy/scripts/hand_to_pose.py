@@ -14,9 +14,18 @@ from franka_gripper.msg import GraspAction, GraspGoal, MoveAction, MoveGoal, Hom
 
  
 # Extract the initial pose from the YAML file
-initial_pose = rospy.get_param('/shared_autonomy/initial_pose', {
-    'position': {'x': 0.3, 'y': 0.0, 'z': 0.4},
-    'orientation': {'x': 1.0, 'y': 0.0, 'z': 0.0, 'w': 0.0}
+initial_pose = rospy.get_param('/initial_pose', {
+    'position': {
+        'x': 0.30699088606283903,
+        'y': 2.8203182887441273e-05,
+        'z': 0.4870162491576909
+    },
+    'orientation': {
+        'x': 1.0,
+        'y': 0.0,
+        'z': 0.0,
+        'w': 0.0
+    }
 })
 print(f"Initial pose loaded: {initial_pose}")
 
@@ -98,22 +107,34 @@ class HandTrackerNode:
     def perform_grasp(self):
         rospy.loginfo("Executing GRASP...")
         goal = GraspGoal()
-        goal.width = 0.0
-        goal.epsilon = GraspEpsilon(inner=0.01, outer=0.01)
-        goal.speed = 0.1
-        goal.force = 5.0
-        self.grasp_client.send_goal(goal)
-        self.grasp_client.wait_for_result()
-        self.gripper_closed = True
+        goal.epsilon = GraspEpsilon(inner=0.02, outer=0.02)  # Margine di tolleranza
+        goal.width = 0.052
+        goal.speed = 0.02
+        goal.force = 50.0
+
+        def grasp_done_cb(state, result):
+            if result.success:
+                rospy.loginfo("Grasp successful.")
+                self.gripper_closed = True
+            else:
+                rospy.logwarn("Grasp failed.")
+
+        self.grasp_client.send_goal(goal, done_cb=grasp_done_cb)
+
 
 
     def perform_open(self):
         rospy.loginfo("Executing OPEN...")
         goal = MoveGoal(width=0.08, speed=0.1)
-        self.move_client.send_goal(goal)
-        if self.move_client.wait_for_result(rospy.Duration(5.0)) and self.move_client.get_result().success:
-            self.gripper_closed = False; rospy.loginfo("Open successful.")
-        else: rospy.logwarn("Open failed.")
+
+        def open_done_cb(state, result):
+            if result.success:
+                self.gripper_closed = False
+                rospy.loginfo("Open successful.")
+            else:
+                rospy.logwarn("Open failed.")
+
+        self.move_client.send_goal(goal, done_cb=open_done_cb)
 
     def perform_homing(self):
         rospy.loginfo("Executing HOMING...")

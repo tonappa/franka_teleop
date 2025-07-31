@@ -12,10 +12,20 @@ import numpy as np
 
 
 # Extract the initial pose from the YAML file
-initial_pose = rospy.get_param('/shared_autonomy/initial_pose', {
-    'position': {'x': 0.3, 'y': 0.0, 'z': 0.4},
-    'orientation': {'x': 1.0, 'y': 0.0, 'z': 0.0, 'w': 0.0}
+initial_pose = rospy.get_param('/initial_pose', {
+    'position': {
+        'x': 0.30699088606283903,
+        'y': 2.8203182887441273e-05,
+        'z': 0.4870162491576909
+    },
+    'orientation': {
+        'x': 1.0,
+        'y': 0.0,
+        'z': 0.0,
+        'w': 0.0
+    }
 })
+
 print(f"Initial pose loaded: {initial_pose}")
 
 # Extract the position of the cylinders
@@ -103,14 +113,14 @@ def main():
 
     # Calcola i punti lungo la traiettoria ad arco
     initial_point = [initial_pose['position']['x'], initial_pose['position']['y'], initial_pose['position']['z']]
-    final_point = [pos_cylinder_red[0], pos_cylinder_red[1], pos_cylinder_red[2] + height_cylinder - 0.05]
+    final_point = [pos_cylinder_red[0], pos_cylinder_red[1], pos_cylinder_red[2] + height_cylinder - 0.02]
     eps = 0.45  # Offset per evitare collisioni con il cilindro rosso
-    median_point = [(initial_point[0] + final_point[0]) / 2,  final_point[1] - 0.1, final_point[2] + eps]
+    median_point = [(initial_point[0] + final_point[0]) / 2,  final_point[1] - 0.05, final_point[2] + eps]
     
     trajectory = [arc_trajectory(initial_point, median_point, final_point, t) 
-              for t in np.linspace(0, 1, 5000)]
+              for t in np.linspace(0, 1, 1000)] #5000
     
-    print(f"Trajectory points: {trajectory}")
+    # print(f"Trajectory points: {trajectory}")
 
     # Inizializza l'indice per la traiettoria
     index = 0

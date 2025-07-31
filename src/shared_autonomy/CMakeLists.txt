@@ -37,6 +37,7 @@ include_directories(
 catkin_install_python(PROGRAMS
   scripts/hand_to_pose.py
   scripts/robot_autonomy.py
+  scripts/gazebo_to_rviz.py
   scripts/shared_autonomy.py
   scripts/gripper_close.py
   scripts/param_interface.py

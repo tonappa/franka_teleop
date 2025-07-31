@@ -11,6 +11,8 @@
     </node>
   </group>
 
+  <!-- <node pkg="shared_autonomy" type="gazebo_to_rviz.py" name="gazebo_object_publisher" output="screen" /> -->
+
   <!-- Include the teleoperation launch file with hand tracking and gripper closer-->
   <include file="$(find shared_autonomy)/launch/teleop_hand_tracking.launch"/>
 
@@ -23,7 +25,7 @@
   </node>
 
   <node pkg="rosbag" type="record" name="rosbag_record_franka"
-        args="-o $(find shared_autonomy)/bags/franka_data /joint_states /tf /tf_static /franka_state_controller/franka_states"
+        args="-O $(find shared_autonomy)/bags/franka_data.bag /joint_states /tf /tf_static /franka_state_controller/franka_states"
         output="screen"/>
 
 

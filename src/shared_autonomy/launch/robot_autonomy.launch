@@ -30,6 +30,7 @@
   <node name="cube2" pkg="gazebo_ros" type="spawn_model" output="screen"
         args="-sdf -file $(find panda_gazebo_models)/models/blue_cube/model.sdf -model cube2 -x $(arg cube2_x) -y $(arg cube2_y) -z $(arg cube2_z)" /> -->
 
+  <rosparam file="$(find shared_autonomy)/config/initial_pose.yaml" command="load" />
 
 
   <!-- Run the node with robot autonomy -->

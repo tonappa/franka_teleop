@@ -60,6 +60,9 @@
     <arg name="align_depth"   value="true"/>
   </include> -->
 
+      
+  <rosparam file="$(find shared_autonomy)/config/initial_pose.yaml" command="load" />
+
   <rosparam file="$(find franka_example_controllers)/config/franka_example_controllers.yaml"
             subst_value="true"/>
 

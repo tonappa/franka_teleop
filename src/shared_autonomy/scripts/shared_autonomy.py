@@ -46,12 +46,12 @@ def blending_function(teleop_pose, autonomy_pose, blending_factor):
     blended_pose.pose.orientation.z = (1 - blending_factor) * teleop_pose.pose.orientation.z + blending_factor * autonomy_pose.pose.orientation.z
 
     # Normalizza l'orientamento
-    norm = (blended_pose.pose.orientation.w ** 2 + blended_pose.pose.orientation.x ** 2 +
-            blended_pose.pose.orientation.y ** 2 + blended_pose.pose.orientation.z ** 2) ** 0.5
-    blended_pose.pose.orientation.w /= norm
-    blended_pose.pose.orientation.x /= norm
-    blended_pose.pose.orientation.y /= norm
-    blended_pose.pose.orientation.z /= norm
+    # norm = (blended_pose.pose.orientation.w ** 2 + blended_pose.pose.orientation.x ** 2 +
+    #         blended_pose.pose.orientation.y ** 2 + blended_pose.pose.orientation.z ** 2) ** 0.5
+    # blended_pose.pose.orientation.w /= norm
+    # blended_pose.pose.orientation.x /= norm
+    # blended_pose.pose.orientation.y /= norm
+    # blended_pose.pose.orientation.z /= norm
 
     # Log per debug
     # rospy.loginfo(f"Blended Pose: {blended_pose.pose.position.x}, {blended_pose.pose.position.y}, {blended_pose.pose.position.z}, "
