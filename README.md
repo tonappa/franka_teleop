@@ -30,8 +30,10 @@ The workspace is organized into the following key ROS packages:
     Clone the project to your machine (e.g., on your `Desktop`).
     ```bash
     cd ~/Desktop/
+    mkdir franka_teleop/src
+    cd franka_teleop/src
 	git clone --branch SharedAutonomy_main https://github.com/tonappa/franka_teleop.git
-    cd ~/Desktop/franka_teleop
+    cd ..
     ```
 
 2.  **Build the Docker Image**
