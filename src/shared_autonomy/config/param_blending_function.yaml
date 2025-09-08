@@ -1,0 +1,5 @@
+blending_function_params:  
+  min_dist: 0.02
+  max_dist: 1.0
+  min_blend: 0.2
+  max_blend: 0.98

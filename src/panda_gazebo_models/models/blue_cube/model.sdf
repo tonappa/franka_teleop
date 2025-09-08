@@ -5,30 +5,31 @@
     <link name="link">
       <pose>0 0 0.05 0 0 0</pose>
 
-      <!-- Inerzia -->
-    <inertial>
-      <mass>0.2</mass>
-      <inertia>
-        <ixx>0.000104</ixx>
-        <iyy>0.000104</iyy>
-        <izz>0.000002</izz>
-        <ixy>0.0</ixy>
-        <ixz>0.0</ixz>
-        <iyz>0.0</iyz>
-      </inertia>
-    </inertial>
+      <inertial>
+        <mass>0.2</mass>
+        <inertia>
+          <ixx>0.000104</ixx>
+          <iyy>0.000104</iyy>
+          <izz>0.000002</izz>
+          <ixy>0.0</ixy>
+          <ixz>0.0</ixz>
+          <iyz>0.0</iyz>
+        </inertia>
+      </inertial>
 
-      <!-- Collisione -->
       <collision name="collision">
         <geometry>
           <box>
-            <size>0.05 0.05 0.1</size> <!-- larghezza, profondità, altezza -->
+            <size>0.05 0.05 0.1</size>
           </box>
         </geometry>
         <surface>
           <contact>
             <ode>
-              <max_contacts>3</max_contacts>
+              <kp>1e+8</kp> 
+              <kd>1e+8</kd>
+              <max_vel>1.0</max_vel>
+              <min_depth>0.002</min_depth>
             </ode>
           </contact>
           <friction>
@@ -40,7 +41,6 @@
         </surface>
       </collision>
 
-      <!-- Visuale -->
       <visual name="visual">
         <geometry>
           <box>

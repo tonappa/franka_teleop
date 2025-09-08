@@ -34,6 +34,10 @@ class HandTrackerNode:
     def __init__(self):
         rospy.init_node('hand_tracker_node', anonymous=True)
 
+        self.pub_switch_goal = rospy.Publisher('/switch_goal', Int32, queue_size=1)
+        self.switch_goal_counter = 0
+
+
         self.paused = True
         self.reference_hand_pose = None
         self.reference_hand_size = None # NEW: To store the reference hand size
@@ -235,7 +239,8 @@ class HandTrackerNode:
                 "[Q] - Quit",
                 "[Space] - Toggle Tracking",
                 "[C] - Reset Position",
-                "[G] - Close or Open the Gripper"
+                "[G] - Close or Open the Gripper",
+                "[S] - Switch Goal"
             ]
             for i, line in enumerate(instructions):
                 cv2.putText(image, line, (10, 60 + i * 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
@@ -254,7 +259,10 @@ class HandTrackerNode:
                     self.perform_grasp()
                 elif self.gripper_closed:
                     self.perform_open()
-
+            elif key == ord('s'):
+                self.switch_goal_counter += 1
+                self.pub_switch_goal.publish(Int32(self.switch_goal_counter))
+                rospy.loginfo("Published to /switch_goal topic.")
 
         self.cap.release()
         cv2.destroyAllWindows()

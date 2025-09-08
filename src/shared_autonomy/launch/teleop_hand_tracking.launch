@@ -46,6 +46,12 @@
   <node name="cube2" pkg="gazebo_ros" type="spawn_model" output="screen"
         args="-sdf -file $(find panda_gazebo_models)/models/blue_cube/model.sdf -model cube2 -x $(arg cube2_x) -y $(arg cube2_y) -z $(arg cube2_z)" />
 
+<node name="cube1_support" pkg="gazebo_ros" type="spawn_model" output="screen"
+      args="-sdf -file $(find panda_gazebo_models)/models/cube_support/model.sdf -model cube1_support -x $(arg cube1_x) -y $(arg cube1_y) -z 0.355" />
+
+<node name="cube2_support" pkg="gazebo_ros" type="spawn_model" output="screen"
+      args="-sdf -file $(find panda_gazebo_models)/models/cube_support/model.sdf -model cube2_support -x $(arg cube2_x) -y $(arg cube2_y) -z 0.355" />
+
   <!-- <node name="cylinder3" pkg="gazebo_ros" type="spawn_model" output="screen"
         args="-sdf -file $(find panda_gazebo_models)/models/blue_cylinder_small/model.sdf -model cylinder3 -x $(arg cylinder3_x) -y $(arg cylinder3_y) -z $(arg cylinder3_z)" /> -->
 

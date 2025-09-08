@@ -1,6 +1,6 @@
 <launch>
 
-  <arg name="initial_blending_param"  default="0.5"  />
+  <arg name="initial_blending_param"  default="0.0"  />
   <arg name="online_editing_enabled"  default="True" />
   <arg name="blending_param_GUI"      default="True" />
 
