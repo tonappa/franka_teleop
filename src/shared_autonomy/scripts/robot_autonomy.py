@@ -53,7 +53,7 @@ def switch_goal_callback(msg):
 
 switch_goal_sub = rospy.Subscriber('/switch_goal', Int32, switch_goal_callback)
 
-
+# Function to extract cylinder length from SDF file
 def extract_cylinder_length(sdf_path, model_name):
     tree = ET.parse(sdf_path)
     root = tree.getroot()
@@ -73,7 +73,7 @@ def extract_cylinder_length(sdf_path, model_name):
     print(length)
     return None
 
-
+# Function to compute a point along a quadratic Bezier curve (arc trajectory)
 def arc_trajectory(p0, pm, pf, t):
     """
     Calcola un punto lungo una traiettoria ad arco data da tre punti.
@@ -90,7 +90,7 @@ def arc_trajectory(p0, pm, pf, t):
     position = (1 - t)**2 * p0 + 2 * (1 - t) * t * pm + t**2 * pf
     return position
 
-
+# Function to choose a trajectory based on the index
 def chose_trajectory(trajectory, index):
     """
     Sceglie una traiettoria in base all'indice.
@@ -104,7 +104,7 @@ def chose_trajectory(trajectory, index):
     else:
         return trajectory[-1]  # mantieni l'ultimo punto se l'indice è fuori range
 
-
+# Main function
 def main():
 
     rospy.init_node('robot_autonomy_node')
@@ -121,7 +121,7 @@ def main():
         'models', 'red_cylinder_small', 'model.sdf'
     )
 
-    # ATTENZIONE: devi usare il nome del modello che è dentro il tag <model name="...">
+    #Extract the height of the cylinder from the SDF file
     height_cylinder = extract_cylinder_length(model_path, 'small_cylinder')
     print(f"Altezza del cilindro rosso: {height_cylinder}")
 
@@ -130,7 +130,7 @@ def main():
 
     des_orientation = [initial_pose['orientation']['x'], initial_pose['orientation']['y'], initial_pose['orientation']['z'], initial_pose['orientation']['w']]
 
-    # Calcola i punti lungo la traiettoria ad arco
+    # Compute trajectories points
 
     ####### Trajectory 1 PICK1
 
@@ -185,7 +185,7 @@ def main():
     trajectory5 = [arc_trajectory(initial_point5, median_point5, final_point5, t)
                    for t in np.linspace(0, 1, 1000)]  # 1000
 
-    # Dizionario di traiettorie 
+    # List of all trajectories
     trajectory = [trajectory1, trajectory2, trajectory3, trajectory4, trajectory5]
     
 

@@ -3,80 +3,13 @@
 import rospy
 from geometry_msgs.msg import PoseStamped 
 from std_msgs.msg import Float32
+from typing import List
 import numpy as np
 import yaml
 import os
 import matplotlib
 
 OPT_SOL = False  # Set to True to use the optimal solution function
-
-
-######################################################################################################
-# Function to blend the autonomous and teleoperated poses with the blending factor
-def ex_blending_function(a, b, c):
-
-    blended_pose = PoseStamped()
-
-    ############################################################
-    #   Write here your code!                                  #
-    #   Write the blending function logic here assuming the    #
-    #   knowledge of the teleoperation pose (a), autonomy pose #
-    #   (b), and the blending factor (c)                       #
-    ############################################################
-    #                                                          #
-
-
-
-    #                                                          #
-    ############################################################
-    
-    blended_pose.pose.orientation = blending_function_orientation(teleop_pose, autonomy_pose, blending_factor).pose.orientation
-
-    return blended_pose
-##############################################################################################################
-# Function to create the linear function 
-def ex_optimal_solution(indipendent_variable, param_vec):
-
-    ############################################################
-    #   Write here your code!                                  #
-    #   Write here your optimal solution with the blending     #
-    #   function, varying the blending factor through a chosen #
-    #   independent variable                                   #
-    ############################################################
-    #                                                          #
-
-
-
-    #                                                          #
-    ############################################################
-
-
-    return blending_factor
-###############################################################################################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -237,8 +170,10 @@ def main():
             )
 
         print(f"Blending parameter: {blending_param:.2f}")
+        
         # Blending function application
         blended_pose = blending_function(teleop_pose, autonomy_pose, blending_param)
+
         # print(f"Blending parameter: {blending_param:.2f}")
         # print(f"Teleop Pose: {teleop_pose.pose.position.x}, {teleop_pose.pose.position.y}, {teleop_pose.pose.position.z}")
         # print(f"Autonomy Pose: {autonomy_pose.pose.position.x}, {autonomy_pose.pose.position.y}, {autonomy_pose.pose.position.z}")

@@ -29,7 +29,7 @@ initial_pose = rospy.get_param('/initial_pose', {
 })
 print(f"Initial pose loaded: {initial_pose}")
 
-
+# Main Node Class Definition 
 class HandTrackerNode:
     def __init__(self):
         rospy.init_node('hand_tracker_node', anonymous=True)
@@ -40,13 +40,13 @@ class HandTrackerNode:
 
         self.paused = True
         self.reference_hand_pose = None
-        self.reference_hand_size = None # NEW: To store the reference hand size
+        self.reference_hand_size = None # To store the reference hand size
         self.last_gesture_id = -1
         self.gripper_closed = False
         
         # Scaling factors
         self.scale_factor_xy = 1.2
-        self.scale_factor_depth = 0.7 # MODIFIED: Scaling factor for depth
+        self.scale_factor_depth = 0.7 # Scaling factor for depth
 
         self.win_width = 1024
         self.win_height = 768
@@ -97,25 +97,28 @@ class HandTrackerNode:
             rospy.logerr("Cannot open webcam.")
             rospy.signal_shutdown("Webcam not found.")
 
+    # Gesture callback function
     def gesture_callback(self, msg):
         gid = msg.data
-        if gid == self.last_gesture_id: return
-        self.last_gesture_id = gid
+        if gid == self.last_gesture_id: return   # Ignore repeated gestures
+        self.last_gesture_id = gid # Update last gesture
+         # Log the received gesture
         rospy.loginfo(f"Received gesture: {gid}")
-        if gid == 1 and not self.gripper_closed: self.perform_grasp() 
-        elif gid == 2 and self.gripper_closed: self.perform_open() 
-        elif gid == 3: self.reset_reference_and_robot_origin()
-        elif gid == 4: self.toggle_tracking_standby()
+        if gid == 1 and not self.gripper_closed: self.perform_grasp() # Close gripper only if it's open
+        elif gid == 2 and self.gripper_closed: self.perform_open() # Open gripper only if it's closed
+        elif gid == 3: self.reset_reference_and_robot_origin() # Reset position
+        elif gid == 4: self.toggle_tracking_standby() # Toggle tracking/standby
 
-
+    # Grasp and Open functions
     def perform_grasp(self):
         rospy.loginfo("Executing GRASP...")
-        goal = GraspGoal()
-        goal.epsilon = GraspEpsilon(inner=0.02, outer=0.02)  # Margine di tolleranza
+        goal = GraspGoal() 
+        goal.epsilon = GraspEpsilon(inner=0.02, outer=0.02)  # Tolerance for grasping
         goal.width = 0.052
         goal.speed = 0.02
         goal.force = 50.0
-
+        
+        # Callback to handle the result of the grasp action
         def grasp_done_cb(state, result):
             if result.success:
                 rospy.loginfo("Grasp successful.")
@@ -126,11 +129,11 @@ class HandTrackerNode:
         self.grasp_client.send_goal(goal, done_cb=grasp_done_cb)
 
 
-
+    # Open function
     def perform_open(self):
         rospy.loginfo("Executing OPEN...")
         goal = MoveGoal(width=0.08, speed=0.1)
-
+        # Callback to handle the result of the open action
         def open_done_cb(state, result):
             if result.success:
                 self.gripper_closed = False
@@ -139,7 +142,7 @@ class HandTrackerNode:
                 rospy.logwarn("Open failed.")
 
         self.move_client.send_goal(goal, done_cb=open_done_cb)
-
+    # Homing function
     def perform_homing(self):
         rospy.loginfo("Executing HOMING...")
         goal = HomingGoal()
@@ -147,7 +150,7 @@ class HandTrackerNode:
         if self.homing_client.wait_for_result(rospy.Duration(10.0)) and self.homing_client.get_result().success:
             rospy.loginfo("Homing successful.")
         else: rospy.logwarn("Homing failed.")
-
+    # Reset function
     def reset_reference_and_robot_origin(self):
         rospy.loginfo("RESET: Robot position has been reset.")
         self.reference_hand_pose = None
@@ -155,7 +158,7 @@ class HandTrackerNode:
         self.target_pose = self.spawn_pose
         self.target_pose.header.stamp = rospy.Time.now()
         self.pose_publisher.publish(self.target_pose)
-
+    # Toggle tracking/standby function
     def toggle_tracking_standby(self):
         self.paused = not self.paused
         if self.paused:
@@ -164,14 +167,14 @@ class HandTrackerNode:
             self.reference_hand_size = None # NEW: Also reset the size
         else:
             rospy.loginfo("START: Tracking active.")
-            
+    # Main loop
     def run(self):
         rate = rospy.Rate(15)
         while not rospy.is_shutdown():
             success, image = self.cap.read()
             if not success:
                 continue
-
+                
             image = cv2.resize(image, (self.win_width, self.win_height))
             image = cv2.flip(image, 1)
 
@@ -179,8 +182,8 @@ class HandTrackerNode:
             results = self.hands.process(image_rgb)
             image = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
 
-            if not self.paused and results.multi_hand_landmarks:
-                hand_landmarks = results.multi_hand_landmarks[0]
+            if not self.paused and results.multi_hand_landmarks: 
+                hand_landmarks = results.multi_hand_landmarks[0] # Only consider the first detected hand
 
                 # Calculate centroid
                 cx, cy = 0, 0
@@ -204,8 +207,8 @@ class HandTrackerNode:
                     self.reference_hand_size = current_hand_size
 
                 # Calculate XY movement
-                delta_y = -(centroid['x'] - self.reference_hand_pose['x']) * self.scale_factor_xy
-                delta_z = -(centroid['y'] - self.reference_hand_pose['y']) * self.scale_factor_xy
+                delta_y = -(centroid['x'] - self.reference_hand_pose['x']) * self.scale_factor_xy # Inverted direction
+                delta_z = -(centroid['y'] - self.reference_hand_pose['y']) * self.scale_factor_xy # Inverted direction
 
                 # Calculate depth (robot's X-axis) based on size (inverted direction)
                 size_ratio = current_hand_size / self.reference_hand_size
@@ -222,18 +225,18 @@ class HandTrackerNode:
                 self.target_pose = current_pose
 
                 # Draw landmarks and centroid
-                self.mp_drawing.draw_landmarks(image, hand_landmarks, self.mp_hands.HAND_CONNECTIONS)
-                centroid_px = (int(centroid['x'] * self.win_width), int(centroid['y'] * self.win_height))
-                cv2.circle(image, centroid_px, 8, (0, 255, 0), -1)
+                self.mp_drawing.draw_landmarks(image, hand_landmarks, self.mp_hands.HAND_CONNECTIONS) # Draw hand landmarks
+                centroid_px = (int(centroid['x'] * self.win_width), int(centroid['y'] * self.win_height)) # Convert to pixel coordinates
+                cv2.circle(image, centroid_px, 8, (0, 255, 0), -1) # Draw centroid
                 coord_text = f"X:{self.target_pose.pose.position.x:.3f} Y:{self.target_pose.pose.position.y:.3f} Z:{self.target_pose.pose.position.z:.3f}"
                 cv2.putText(image, coord_text, (centroid_px[0] + 15, centroid_px[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
-
+            # Publish the target pose
             self.pose_publisher.publish(self.target_pose)
 
             # Display status and controls
             status_text = "PAUSED (Space)" if self.paused else "TRACKING (Space)"
             cv2.putText(image, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
-
+            # Display coordinates
             instructions = [
                 "--- CONTROLS ---",
                 "[Q] - Quit",
@@ -246,7 +249,7 @@ class HandTrackerNode:
                 cv2.putText(image, line, (10, 60 + i * 22), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1)
 
             cv2.imshow('Hand Tracking Control', image)
-
+            # Handle key presses
             key = cv2.waitKey(5) & 0xFF
             if key == ord('q'):
                 break
