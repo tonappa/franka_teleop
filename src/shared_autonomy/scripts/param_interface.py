@@ -1,17 +1,152 @@
 #!/usr/bin/env python3
 
 import tkinter as tk
-from tkinter import PhotoImage
 from PIL import Image
 import os
 import signal
+import numpy as np
+import cv2
 
 import rospy
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool, Empty, Int32
+from sensor_msgs.msg import Image as ROSImage
+
+# === ROS Image Callback ===
+def image_cb(msg):
+    try:
+        # Manually convert sensor_msgs/Image to numpy BGR array
+        if msg.encoding == 'bgr8':
+            cv_image_bgr = np.frombuffer(msg.data, dtype=np.uint8).reshape((msg.height, msg.width, 3))
+        elif msg.encoding == 'rgb8':
+            cv_image_rgb = np.frombuffer(msg.data, dtype=np.uint8).reshape((msg.height, msg.width, 3))
+            cv_image_bgr = cv2.cvtColor(cv_image_rgb, cv2.COLOR_RGB2BGR)
+        elif msg.encoding == 'mono8':
+            cv_image_mono = np.frombuffer(msg.data, dtype=np.uint8).reshape((msg.height, msg.width))
+            cv_image_bgr = cv2.cvtColor(cv_image_mono, cv2.COLOR_GRAY2BGR)
+        else:
+            rospy.logwarn_throttle(5.0, f"GUI: Unsupported image encoding: {msg.encoding}")
+            return
+
+        # Resize to 480x270 to preserve 16:9 aspect ratio without horizontal squishing
+        cv_image_resized_bgr = cv2.resize(cv_image_bgr, (480, 270))
+        
+        # Encode to PPM in memory (native support in Tkinter PhotoImage)
+        success, buf = cv2.imencode('.ppm', cv_image_resized_bgr)
+        if not success:
+            rospy.logerr_throttle(5.0, "GUI: Failed to encode image to PPM")
+            return
+            
+        img_tk = tk.PhotoImage(data=buf.tobytes())
+        
+        # Update image label (keeping a reference to avoid garbage collection)
+        if camera_label is not None:
+            camera_label.img_tk = img_tk
+            camera_label.config(image=img_tk)
+    except Exception as e:
+        rospy.logerr_throttle(5.0, f"GUI: Error decoding image: {e}")
+
+# === Widget references for ROS thread safety ===
+camera_label = None
+status_label = None
+clutch_button = None
+orient_button = None
+task_label = None
 
 # === ROS NODE ===
 rospy.init_node('blending_slider_gui', anonymous=True)
 pub = rospy.Publisher('/blending_param', Float32, queue_size=10)
+pub_clutch = rospy.Publisher('/bridge/clutch', Bool, queue_size=1, latch=True)
+pub_reset = rospy.Publisher('/bridge/reset', Empty, queue_size=1)
+pub_calibrate = rospy.Publisher('/bridge/calibrate', Bool, queue_size=1, latch=True)
+clutch_state = True
+calibrating_state = False
+
+def clutch_cb(msg):
+    global clutch_state
+    clutch_state = msg.data
+    if status_label is not None and clutch_button is not None:
+        if clutch_state:
+            status_label.config(text="Status: CLUTCHED (Frozen)", fg="#FF6961")
+            clutch_button.config(text="ENGAGE TRACKING (Space)", bg="#008CBA")
+        else:
+            status_label.config(text="Status: TRACKING (Active)", fg="#22A927")
+            clutch_button.config(text="FREEZE ROBOT (Space)", bg="#D9534F")
+
+sub_clutch = rospy.Subscriber('/bridge/clutch', Bool, clutch_cb)
+
+def toggle_clutch_cmd():
+    pub_clutch.publish(Bool(data=not clutch_state))
+
+def on_space(event):
+    toggle_clutch_cmd()
+
+def send_home_cmd():
+    rospy.loginfo("GUI: Requesting robot return to HOME configuration")
+    pub_reset.publish(Empty())
+
+def on_h(event):
+    send_home_cmd()
+
+pub_lock_orient = rospy.Publisher('/bridge/lock_orientation', Bool, queue_size=1, latch=True)
+pub_lock_orient.publish(Bool(data=True))
+orient_locked_state = True
+
+def lock_orient_cb(msg):
+    global orient_locked_state
+    orient_locked_state = msg.data
+    if orient_button is not None:
+        if orient_locked_state:
+            orient_button.config(text="UNLOCK ORIENT. (O)", bg="#D9534F")
+        else:
+            orient_button.config(text="LOCK ORIENT. (O)", bg="#22A927")
+
+sub_lock_orient = rospy.Subscriber('/bridge/lock_orientation', Bool, lock_orient_cb)
+
+def toggle_orient_cmd():
+    pub_lock_orient.publish(Bool(data=not orient_locked_state))
+
+def on_o(event):
+    toggle_orient_cmd()
+
+pub_switch_goal = rospy.Publisher('/switch_goal', Int32, queue_size=1, latch=True)
+current_goal = 0
+
+def switch_goal_cb(msg):
+    global current_goal
+    current_goal = msg.data
+    if task_label is not None:
+        task_names = ["PICK RED CUBE", "PLACE RED CUBE", "PICK BLUE CUBE", "PLACE BLUE CUBE", "GO HOME"]
+        if 0 <= current_goal < len(task_names):
+            task_name = task_names[current_goal]
+        else:
+            task_name = f"TASK {current_goal}"
+        task_label.config(text=f"Autonomy Task: {task_name}", fg="#3498DB")
+
+sub_switch_goal = rospy.Subscriber('/switch_goal', Int32, switch_goal_cb)
+sub_image = rospy.Subscriber('/hand/debug_image', ROSImage, image_cb)
+
+def next_task_cmd():
+    next_g = (current_goal + 1) % 5
+    pub_switch_goal.publish(Int32(data=next_g))
+
+def on_t(event):
+    next_task_cmd()
+
+def toggle_calibration_cmd():
+    global calibrating_state
+    calibrating_state = not calibrating_state
+    pub_calibrate.publish(Bool(data=calibrating_state))
+    if calibrating_state:
+        calibrate_button.configure(text="STOP CALIBRATING (C)", bg="#E74C3C")
+        status_label.configure(text="Status: CALIBRATING...", fg="#F39C12")
+    else:
+        calibrate_button.configure(text="CALIBRATE WORKSPACE (C)", bg="#9B59B6")
+        status_label.configure(text="Status: CLUTCHED (Frozen)", fg="#FF6961")
+        if not clutch_state:
+            status_label.configure(text="Status: TELEOP ACTIVE", fg="#2ECC71")
+
+def on_c(event):
+    toggle_calibration_cmd()
 
 # === Configurazione iniziale ===
 online_editing_enabled = rospy.get_param('/param_interface/online_editing_enabled', False)
@@ -27,23 +162,59 @@ icon_path = os.path.join(script_dir, "..", "icon", "volume.png")
 icon_path = os.path.abspath(icon_path)
 
 root = tk.Tk()
-root.title("Blending Parameter Control")
-root.geometry("640x360")
+root.title("Franka Panda - Teleoperation Dashboard")
+root.geometry("960x520")
 root.resizable(False, False)
 root.configure(bg="#161515")
 
 # Carica e ridimensiona icona
 img = Image.open(icon_path).resize((48, 48), Image.LANCZOS)
-icon = PhotoImage(file=icon_path)
+icon = tk.PhotoImage(file=icon_path)
 root.iconphoto(True, icon)
 
-# === Frame principale ===
-main_frame = tk.Frame(root, bg="#161515")
-main_frame.pack(expand=True)
+# === Layout principale (Split View) ===
+split_frame = tk.Frame(root, bg="#161515")
+split_frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-# === Header ===
-header_frame = tk.Frame(main_frame, bg="#161515")
-header_frame.pack(pady=20)
+# --- Colonna Sinistra (Camera Feed) ---
+left_frame = tk.LabelFrame(
+    split_frame,
+    text=" HAND TRACKING CAMERA FEED ",
+    font=("Helvetica", 12, "bold"),
+    fg="#3498DB",
+    bg="#161515",
+    bd=2,
+    relief="groove"
+)
+left_frame.pack(side="left", fill="both", expand=True, padx=10)
+
+camera_label = tk.Label(
+    left_frame,
+    text="Awaiting /hand/debug_image stream...",
+    font=("Helvetica", 14),
+    bg="#0a0a0a",
+    fg="#888888"
+)
+camera_label.pack(fill="both", expand=True, padx=10, pady=10)
+
+# --- Colonna Destra (Controlli) ---
+right_frame = tk.Frame(split_frame, bg="#161515")
+right_frame.pack(side="right", fill="both", expand=True, padx=10)
+
+# === Sezione 1: Shared Autonomy (Assistenza) ===
+blending_frame = tk.LabelFrame(
+    right_frame,
+    text=" SHARED AUTONOMY ",
+    font=("Helvetica", 11, "bold"),
+    fg="#F39C12",
+    bg="#161515",
+    bd=2,
+    relief="groove"
+)
+blending_frame.pack(fill="x", padx=5, pady=5)
+
+header_frame = tk.Frame(blending_frame, bg="#161515")
+header_frame.pack(pady=5)
 
 icon_label = tk.Label(header_frame, image=icon, bg="#161515")
 icon_label.pack(side="left", padx=10)
@@ -51,30 +222,28 @@ icon_label.pack(side="left", padx=10)
 title_label = tk.Label(
     header_frame,
     text="Assistance Level",
-    font=("Helvetica", 20, "bold"),
+    font=("Helvetica", 16, "bold"),
     fg="white",
     bg="#161515"
 )
 title_label.pack(side="left", padx=10)
 
-# === Etichetta valore ===
 value_label = tk.Label(
-    main_frame,
+    blending_frame,
     text="Value: {:.2f}".format(blending_param_init),
     font=("Helvetica", 18, "bold"),
-    fg="#FF6961",
+    fg="#F39C12",
     bg="#161515"
 )
-value_label.pack(pady=10)
+value_label.pack(pady=5)
 
-# === Slider ===
 slider = tk.Scale(
-    main_frame,
+    blending_frame,
     from_=0,
     to=1,
     resolution=0.01,
     orient="horizontal",
-    length=400,
+    length=350,
     tickinterval=0.2,
     bg="#161515",
     fg="white",
@@ -82,8 +251,111 @@ slider = tk.Scale(
     troughcolor="white",
     font=("Helvetica", 12, "bold")
 )
-slider.set(blending_param_init)  # Set initial value from parameter
-slider.pack(pady=10)
+slider.set(blending_param_init)
+slider.pack(pady=5)
+
+# === Sezione 2: Manual Teleoperation & System Control ===
+teleop_frame = tk.LabelFrame(
+    right_frame,
+    text=" ROBOT TELEOPERATION ",
+    font=("Helvetica", 11, "bold"),
+    fg="#2ECC71",
+    bg="#161515",
+    bd=2,
+    relief="groove"
+)
+teleop_frame.pack(fill="both", expand=True, padx=5, pady=5)
+
+status_label = tk.Label(
+    teleop_frame,
+    text="Status: CLUTCHED (Frozen)",
+    font=("Helvetica", 14, "bold"),
+    fg="#FF6961",
+    bg="#161515"
+)
+status_label.pack(pady=5)
+
+buttons_frame = tk.Frame(teleop_frame, bg="#161515")
+buttons_frame.pack(pady=5)
+
+clutch_button = tk.Button(
+    buttons_frame,
+    text="ENGAGE TRACKING (Space)",
+    font=("Helvetica", 12, "bold"),
+    command=toggle_clutch_cmd,
+    bg="#008CBA",
+    fg="white",
+    width=24
+)
+clutch_button.pack(pady=3)
+
+home_button = tk.Button(
+    buttons_frame,
+    text="GO HOME (H)",
+    font=("Helvetica", 12, "bold"),
+    command=send_home_cmd,
+    bg="#FFA500",
+    fg="white",
+    width=24
+)
+home_button.pack(pady=3)
+
+orient_button = tk.Button(
+    buttons_frame,
+    text="UNLOCK ORIENT. (O)" if orient_locked_state else "LOCK ORIENT. (O)",
+    font=("Helvetica", 12, "bold"),
+    command=toggle_orient_cmd,
+    bg="#D9534F" if orient_locked_state else "#22A927",
+    fg="white",
+    width=24
+)
+orient_button.pack(pady=3)
+
+calibrate_button = tk.Button(
+    buttons_frame,
+    text="CALIBRATE WORKSPACE (C)",
+    font=("Helvetica", 12, "bold"),
+    command=toggle_calibration_cmd,
+    bg="#9B59B6",
+    fg="white",
+    width=24
+)
+calibrate_button.pack(pady=3)
+
+# === Task Info & Button ===
+task_frame = tk.Frame(teleop_frame, bg="#161515")
+task_frame.pack(pady=5)
+
+task_label = tk.Label(
+    task_frame,
+    text="Autonomy Task: PICK RED CUBE",
+    font=("Helvetica", 11, "bold"),
+    bg="#161515",
+    fg="#3498DB"
+)
+task_label.pack(pady=3)
+
+task_button = tk.Button(
+    task_frame,
+    text="NEXT TASK (T)",
+    font=("Helvetica", 12, "bold"),
+    command=next_task_cmd,
+    bg="#3498DB",
+    fg="white",
+    width=24
+)
+task_button.pack(pady=3)
+
+# === Keyboard bindings ===
+root.bind('<space>', on_space)
+root.bind('<h>', on_h)
+root.bind('<H>', on_h)
+root.bind('<o>', on_o)
+root.bind('<O>', on_o)
+root.bind('<t>', on_t)
+root.bind('<T>', on_t)
+root.bind('<c>', on_c)
+root.bind('<C>', on_c)
 
 # === Funzione di pubblicazione ===
 def on_slider_change(value):
@@ -98,7 +370,7 @@ def confirm_value():
     on_slider_change(val)
 
 confirm_button = tk.Button(
-    main_frame,
+    blending_frame,
     text="Confirm Changes",
     font=("Helvetica", 14, "bold"),
     command=confirm_value,

@@ -1,0 +1,52 @@
+camera:
+  id: 0
+  width: 1280
+  height: 720
+  fps: 30
+  fourcc: "MJPG"
+  mirror_view: false
+
+mediapipe:
+  num_hands: 1
+  model_path: "hand_landmarker.task"
+  min_detection_confidence: 0.5
+  min_presence_confidence: 0.5
+  min_tracking_confidence: 0.5
+
+filter:
+  freq: 30.0
+  mincutoff: 1.0
+  beta: 2.5
+  dcutoff: 1.0
+
+ui:
+  jump_threshold: 0.20
+
+bridge:
+  workspace:
+    x_min: 0.3
+    x_max: 0.8
+    y_min: -0.6
+    y_max: 0.6
+    z_min: 0.1
+    z_max: 0.9
+
+  depth_input_min: 30.0
+  depth_input_max: 50.0
+
+  input_base_range: 0.75
+
+  scale_linear: 1.5
+  scale_angular: 0.7
+  max_angular_velocity: 0.5
+  twist_smoothing: 0.4
+  target_pos_deadband: 0.002
+  target_ang_deadband: 0.005
+  max_target_jump: 0.0
+  timeout: 0.5
+
+rotation_preset_custom:
+  - [ 1,  0,  0,  0]
+  - [ 0,  1,  0,  0]
+  - [ 0,  0,  1,  0]
+  - [ 0,  0,  0,  1]

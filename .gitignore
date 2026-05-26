@@ -12,3 +12,4 @@ shared_autonomy/bags/*
 !shared_autonomy/bags/.gitkeep
 
 plots/
+*.bag.active

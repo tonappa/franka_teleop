@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>hand_tracking</name>
+  <version>0.0.1</version>
+  <description>Hand tracking teleop for Franka Emika Panda with enhanced features (voice, clutch, calibration, filtering)</description>
+  <maintainer email="tonappa@todo.todo">tonappa</maintainer>
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>rospy</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>sensor_msgs</exec_depend>
+  <exec_depend>actionlib</exec_depend>
+  <exec_depend>control_msgs</exec_depend>
+  <exec_depend>trajectory_msgs</exec_depend>
+  <exec_depend>gazebo_ros</exec_depend>
+  <exec_depend>franka_gazebo</exec_depend>
+  <exec_depend>franka_example_controllers</exec_depend>
+  <exec_depend>panda_gazebo_models</exec_depend>
+</package>

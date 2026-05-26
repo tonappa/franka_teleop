@@ -1,8 +1,12 @@
 <launch>
 
+  <!-- Force software rendering to prevent dual-GPU driver conflicts in Docker -->
+  <env name="LIBGL_ALWAYS_SOFTWARE" value="1" />
+
   <arg name="initial_blending_param"  default="0.0"  />
   <arg name="online_editing_enabled"  default="True" />
   <arg name="blending_param_GUI"      default="True" />
+  <arg name="gazebo_gui"              default="true" doc="Start Gazebo GUI"/>
 
   <!-- Run the node with interface to change the blending parameter for shared autonomy -->
   <group if="$(arg blending_param_GUI)">
@@ -14,7 +18,9 @@
   <!-- <node pkg="shared_autonomy" type="gazebo_to_rviz.py" name="gazebo_object_publisher" output="screen" /> -->
 
   <!-- Include the teleoperation launch file with hand tracking and gripper closer-->
-  <include file="$(find shared_autonomy)/launch/teleop_hand_tracking.launch"/>
+  <include file="$(find shared_autonomy)/launch/teleop_hand_tracking.launch">
+    <arg name="gazebo_gui" value="$(arg gazebo_gui)"/>
+  </include>
 
   <!-- Include the robot autonomy launch file -->
   <include file="$(find shared_autonomy)/launch/robot_autonomy.launch"/>

@@ -59,13 +59,30 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt --mount=type=cache,s
     python3-pip \
     wget \
     curl \
-    python3-tk 
+    python3-tk \
+    software-properties-common \
+    ca-certificates \
+    gpg-agent
 
-# pip install
-RUN pip install pyrealsense2 \
+# Add kisak-mesa PPA for better Mesa/Integrated GPU support
+RUN add-apt-repository -y ppa:kisak/kisak-mesa && \
+    apt-get update && apt-get dist-upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    libgl1-mesa-dri \
+    libgl1-mesa-glx \
+    mesa-utils && \
+    rm -rf /var/lib/apt/lists/*
+
+# pip install (core ML/vision packages)
+# Pin mediapipe to 0.10.9 — newer versions (>=0.10.11) pull in jax/jaxlib
+# which are unavailable for Python 3.8 on x86_64 and add 800+ MB of torch.
+RUN pip3 install --default-timeout=1000 --no-cache-dir \
     opencv-python \
     pandas \
-    mediapipe 
+    "mediapipe==0.10.9" \
+    OneEuroFilter \
+    numpy \
+    sympy
 
 # Install ROS-specific packages (depending on ROS_NUMBER)
 RUN --mount=type=cache,sharing=locked,target=/var/cache/apt --mount=type=cache,sharing=locked,target=/var/lib/apt \
@@ -83,8 +100,33 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt --mount=type=cache,s
         ros-$ROS_DISTRO-gazebo-plugins \
         ros-$ROS_DISTRO-tf2-geometry-msgs \
         ros-$ROS_DISTRO-realsense2-camera \
-	    ros-$ROS_DISTRO-realsense2-description ; \
+        ros-$ROS_DISTRO-realsense2-description ; \
     fi
+
+# Audio / speech-recognition dependencies (PulseAudio + Vosk)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    pulseaudio-utils \
+    unzip \
+    xterm \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --default-timeout=1000 --no-cache-dir vosk
+
+# Download Vosk speech models (English + Italian)
+RUN mkdir -p /opt/vosk-models && cd /opt/vosk-models \
+    && wget -q https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip \
+    && unzip vosk-model-small-en-us-0.15.zip \
+    && mv vosk-model-small-en-us-0.15 vosk-model-small-en-us \
+    && rm vosk-model-small-en-us-0.15.zip \
+    && wget -q https://alphacephei.com/vosk/models/vosk-model-small-it-0.22.zip \
+    && unzip vosk-model-small-it-0.22.zip \
+    && mv vosk-model-small-it-0.22 vosk-model-small-it \
+    && rm vosk-model-small-it-0.22.zip
+
+# PlotJuggler for real-time ROS topic visualization
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-noetic-plotjuggler-ros \
+    && rm -rf /var/lib/apt/lists/*
 
 ARG MYUID=1000
 ARG MYGID=1000
@@ -118,7 +160,7 @@ RUN --mount=type=cache,sharing=locked,target=/var/cache/apt --mount=type=cache,s
     cd ${PWDR} \
     && sudo apt-get update \
     && rosdep update \
-    && rosdep install --from-paths src --ignore-src -r -y 
+    && rosdep install --from-paths src --ignore-src -r -y
 
 # Set up environment
 COPY ./docker/.config/update_bashrc_ros_1 /sbin/update_bashrc_ros_1

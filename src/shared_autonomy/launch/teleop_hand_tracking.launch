@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <launch>
 
+  <!-- Force software rendering to prevent dual-GPU driver conflicts in Docker -->
+  <env name="LIBGL_ALWAYS_SOFTWARE" value="1" />
+
   <arg name="arm_id"        default="panda" doc="Name of the panda robot to spawn" />
   <arg name="load_gripper"  default="true"  />
   <arg name="transmission"  default="effort" />
@@ -89,12 +92,43 @@
     </include> -->
 
 
-  <node pkg="shared_autonomy" type="hand_to_pose.py" name="hand_to_pose" output="screen"> </node>
+  <!-- ── Hand tracking pipeline ──────────────────────────────── -->
 
+  <!-- Replaces hand_to_pose.py: MediaPipe hand tracking → /hand/right/pose -->
+  <node pkg="hand_tracking" type="hand_tracker.py" name="hand_tracker" output="screen">
+    <param name="camera_device" value="/dev/video0" />
+    <param name="model_complexity" value="1" />
+    <param name="max_hands" value="1" />
+    <param name="enable_gpu" value="true" />
+    <param name="use_monocular_depth" value="true" />
+    <param name="smoothing" value="true" />
+    <param name="min_detection_confidence" value="0.7" />
+    <param name="min_tracking_confidence" value="0.5" />
+  </node>
 
-  <!-- <node pkg="shared_autonomy" type="gesture_recognizer.py" name="gesture_recognizer" output="screen">
-    <param name="model_path" value="$(find shared_autonomy)/models/gesture_recognizer.task" />
-  </node> -->
+  <!-- Visualizzazione automatica della telecamera integrata nella GUI -->
+  <!-- <node name="rqt_image_view" pkg="rqt_image_view" type="rqt_image_view" args="/hand/debug_image" output="screen" /> -->
+
+  <!-- Maps /hand/right/pose → /teleop_pose with clutch, calibration, deadbands -->
+  <node pkg="hand_tracking" type="panda_bridge.py" name="panda_bridge" output="screen">
+    <param name="ee_frame" value="panda_link8" />
+    <param name="linear_smoothing" value="0.40" />
+    <param name="angular_smoothing" value="0.40" />
+    <param name="max_linear_velocity" value="0.40" />
+  </node>
+
+  <!-- PulseAudio Vosk voice commander (wake word: "Panda") -->
+  <node pkg="hand_tracking" type="voice_commander.py" name="voice_commander" output="screen">
+    <param name="mic_device" value="1" />
+    <param name="en_model_path" value="/opt/vosk-models/vosk-model-small-en-us" />
+    <param name="it_model_path" value="/opt/vosk-models/vosk-model-small-it" />
+  </node>
+
+  <!-- Franka gripper controller (gesture + voice) -->
+  <node pkg="hand_tracking" type="gripper_controller.py" name="gripper_controller" output="screen" />
+
+  <!-- RViz workspace visualiser (box + debug sphere) -->
+  <node pkg="hand_tracking" type="workspace_visualizer.py" name="workspace_visualizer" output="screen" />
 
 
 
