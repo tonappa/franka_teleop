@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import tkinter as tk
+from tkinter import font as tkfont
 from PIL import Image
 import os
 import signal
@@ -27,8 +28,25 @@ def image_cb(msg):
             rospy.logwarn_throttle(5.0, f"GUI: Unsupported image encoding: {msg.encoding}")
             return
 
-        # Resize to 480x270 to preserve 16:9 aspect ratio without horizontal squishing
-        cv_image_resized_bgr = cv2.resize(cv_image_bgr, (480, 270))
+        # Dynamically fit the camera label size or default to 480x270
+        lbl_w = 480
+        lbl_h = 270
+        if camera_label is not None:
+            w = camera_label.winfo_width()
+            h = camera_label.winfo_height()
+            if w > 1 and h > 1:
+                lbl_w = w
+                lbl_h = h
+        
+        # Preserve 16:9 aspect ratio within the label bounds with a small margin (20px)
+        margin = 20
+        target_w = max(10, lbl_w - margin)
+        target_h = int(target_w * 9 / 16)
+        if target_h > lbl_h - margin:
+            target_h = max(10, lbl_h - margin)
+            target_w = int(target_h * 16 / 9)
+
+        cv_image_resized_bgr = cv2.resize(cv_image_bgr, (target_w, target_h))
         
         # Encode to PPM in memory (native support in Tkinter PhotoImage)
         success, buf = cv2.imencode('.ppm', cv_image_resized_bgr)
@@ -120,7 +138,7 @@ def switch_goal_cb(msg):
             task_name = task_names[current_goal]
         else:
             task_name = f"TASK {current_goal}"
-        task_label.config(text=f"Autonomy Task: {task_name}", fg="#3498DB")
+        task_label.config(text=f"Task to Perform: {task_name}", fg="#3498DB")
 
 sub_switch_goal = rospy.Subscriber('/switch_goal', Int32, switch_goal_cb)
 sub_image = rospy.Subscriber('/hand/debug_image', ROSImage, image_cb)
@@ -163,9 +181,38 @@ icon_path = os.path.abspath(icon_path)
 
 root = tk.Tk()
 root.title("Franka Panda - Teleoperation Dashboard")
-root.geometry("960x520")
-root.resizable(False, False)
+root.geometry("960x580")
+root.resizable(True, True)
 root.configure(bg="#161515")
+
+# Initialize named fonts for scaling
+font_11_bold = tkfont.Font(family="Helvetica", size=11, weight="bold")
+font_12_bold = tkfont.Font(family="Helvetica", size=12, weight="bold")
+font_14_bold = tkfont.Font(family="Helvetica", size=14, weight="bold")
+font_16_bold = tkfont.Font(family="Helvetica", size=16, weight="bold")
+font_18_bold = tkfont.Font(family="Helvetica", size=18, weight="bold")
+font_14_normal = tkfont.Font(family="Helvetica", size=14)
+
+initial_width = 960
+initial_height = 580
+
+def on_resize(event):
+    if event.widget != root:
+        return
+    scale_x = event.width / initial_width
+    scale_y = event.height / initial_height
+    scale = min(scale_x, scale_y)
+    if scale < 0.5:
+        scale = 0.5
+        
+    font_11_bold.configure(size=int(11 * scale))
+    font_12_bold.configure(size=int(12 * scale))
+    font_14_bold.configure(size=int(14 * scale))
+    font_16_bold.configure(size=int(16 * scale))
+    font_18_bold.configure(size=int(18 * scale))
+    font_14_normal.configure(size=int(14 * scale))
+
+root.bind('<Configure>', on_resize)
 
 # Carica e ridimensiona icona
 img = Image.open(icon_path).resize((48, 48), Image.LANCZOS)
@@ -180,7 +227,7 @@ split_frame.pack(fill="both", expand=True, padx=20, pady=20)
 left_frame = tk.LabelFrame(
     split_frame,
     text=" HAND TRACKING CAMERA FEED ",
-    font=("Helvetica", 12, "bold"),
+    font=font_12_bold,
     fg="#3498DB",
     bg="#161515",
     bd=2,
@@ -191,7 +238,7 @@ left_frame.pack(side="left", fill="both", expand=True, padx=10)
 camera_label = tk.Label(
     left_frame,
     text="Awaiting /hand/debug_image stream...",
-    font=("Helvetica", 14),
+    font=font_14_normal,
     bg="#0a0a0a",
     fg="#888888"
 )
@@ -205,7 +252,7 @@ right_frame.pack(side="right", fill="both", expand=True, padx=10)
 blending_frame = tk.LabelFrame(
     right_frame,
     text=" SHARED AUTONOMY ",
-    font=("Helvetica", 11, "bold"),
+    font=font_11_bold,
     fg="#F39C12",
     bg="#161515",
     bd=2,
@@ -222,7 +269,7 @@ icon_label.pack(side="left", padx=10)
 title_label = tk.Label(
     header_frame,
     text="Assistance Level",
-    font=("Helvetica", 16, "bold"),
+    font=font_16_bold,
     fg="white",
     bg="#161515"
 )
@@ -231,7 +278,7 @@ title_label.pack(side="left", padx=10)
 value_label = tk.Label(
     blending_frame,
     text="Value: {:.2f}".format(blending_param_init),
-    font=("Helvetica", 18, "bold"),
+    font=font_18_bold,
     fg="#F39C12",
     bg="#161515"
 )
@@ -243,22 +290,21 @@ slider = tk.Scale(
     to=1,
     resolution=0.01,
     orient="horizontal",
-    length=350,
     tickinterval=0.2,
     bg="#161515",
     fg="white",
     highlightbackground="#161515",
     troughcolor="white",
-    font=("Helvetica", 12, "bold")
+    font=font_12_bold
 )
 slider.set(blending_param_init)
-slider.pack(pady=5)
+slider.pack(fill="x", padx=20, pady=5)
 
 # === Sezione 2: Manual Teleoperation & System Control ===
 teleop_frame = tk.LabelFrame(
     right_frame,
     text=" ROBOT TELEOPERATION ",
-    font=("Helvetica", 11, "bold"),
+    font=font_11_bold,
     fg="#2ECC71",
     bg="#161515",
     bd=2,
@@ -269,82 +315,85 @@ teleop_frame.pack(fill="both", expand=True, padx=5, pady=5)
 status_label = tk.Label(
     teleop_frame,
     text="Status: CLUTCHED (Frozen)",
-    font=("Helvetica", 14, "bold"),
+    font=font_14_bold,
     fg="#FF6961",
     bg="#161515"
 )
 status_label.pack(pady=5)
 
 buttons_frame = tk.Frame(teleop_frame, bg="#161515")
-buttons_frame.pack(pady=5)
+buttons_frame.pack(fill="both", expand=True, padx=20, pady=5)
 
 clutch_button = tk.Button(
     buttons_frame,
     text="ENGAGE TRACKING (Space)",
-    font=("Helvetica", 12, "bold"),
+    font=font_12_bold,
     command=toggle_clutch_cmd,
     bg="#008CBA",
-    fg="white",
-    width=24
+    fg="white"
 )
-clutch_button.pack(pady=3)
+clutch_button.pack(fill="both", expand=True, pady=3)
 
 home_button = tk.Button(
     buttons_frame,
     text="GO HOME (H)",
-    font=("Helvetica", 12, "bold"),
+    font=font_12_bold,
     command=send_home_cmd,
     bg="#FFA500",
-    fg="white",
-    width=24
+    fg="white"
 )
-home_button.pack(pady=3)
+home_button.pack(fill="both", expand=True, pady=3)
 
 orient_button = tk.Button(
     buttons_frame,
     text="UNLOCK ORIENT. (O)" if orient_locked_state else "LOCK ORIENT. (O)",
-    font=("Helvetica", 12, "bold"),
+    font=font_12_bold,
     command=toggle_orient_cmd,
     bg="#D9534F" if orient_locked_state else "#22A927",
-    fg="white",
-    width=24
+    fg="white"
 )
-orient_button.pack(pady=3)
+orient_button.pack(fill="both", expand=True, pady=3)
 
 calibrate_button = tk.Button(
     buttons_frame,
     text="CALIBRATE WORKSPACE (C)",
-    font=("Helvetica", 12, "bold"),
+    font=font_12_bold,
     command=toggle_calibration_cmd,
     bg="#9B59B6",
-    fg="white",
-    width=24
+    fg="white"
 )
-calibrate_button.pack(pady=3)
+calibrate_button.pack(fill="both", expand=True, pady=3)
 
-# === Task Info & Button ===
-task_frame = tk.Frame(teleop_frame, bg="#161515")
-task_frame.pack(pady=5)
+# === Sezione 3: Robot Autonomy & Task Control ===
+autonomy_frame = tk.LabelFrame(
+    right_frame,
+    text=" ROBOT AUTONOMY ",
+    font=font_11_bold,
+    fg="#3498DB",
+    bg="#161515",
+    bd=2,
+    relief="groove"
+)
+autonomy_frame.pack(fill="both", expand=True, padx=5, pady=5)
 
 task_label = tk.Label(
-    task_frame,
-    text="Autonomy Task: PICK RED CUBE",
-    font=("Helvetica", 11, "bold"),
+    autonomy_frame,
+    text="Task to Perform: PICK RED CUBE",
+    font=font_11_bold,
     bg="#161515",
     fg="#3498DB"
 )
-task_label.pack(pady=3)
+task_label.pack(pady=5)
 
 task_button = tk.Button(
-    task_frame,
+    autonomy_frame,
     text="NEXT TASK (T)",
-    font=("Helvetica", 12, "bold"),
+    font=font_12_bold,
     command=next_task_cmd,
     bg="#3498DB",
-    fg="white",
-    width=24
+    fg="white"
 )
-task_button.pack(pady=3)
+task_button.pack(fill="both", expand=True, padx=20, pady=5)
 
 # === Keyboard bindings ===
 root.bind('<space>', on_space)
@@ -372,7 +421,7 @@ def confirm_value():
 confirm_button = tk.Button(
     blending_frame,
     text="Confirm Changes",
-    font=("Helvetica", 14, "bold"),
+    font=font_14_bold,
     command=confirm_value,
     bg="#22A927",
     fg="white"
@@ -383,7 +432,7 @@ if online_editing_enabled:
     slider.config(command=on_slider_change)
 else:
     slider.config(command=None)
-    confirm_button.pack(pady=10)
+    confirm_button.pack(fill="x", padx=20, pady=10)
 
 # Permetti chiusura con Ctrl+C
 signal.signal(signal.SIGINT, signal.SIG_DFL)

@@ -81,6 +81,7 @@ RUN pip3 install --default-timeout=1000 --no-cache-dir \
     pandas \
     "mediapipe==0.10.9" \
     OneEuroFilter \
+    pyyaml \
     numpy \
     sympy
 

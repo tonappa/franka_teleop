@@ -1,7 +1,7 @@
 calibration:
-  center_offset_x: 0.06902578330331244
-  center_offset_y: 0.003985068656183588
-  depth_input_max: 57.65642204307671
-  depth_input_min: 23.92174974746768
-  input_x_range: 0.5148934118247018
-  input_y_range: 0.24603073806784287
+  center_offset_x: -0.033970203366750995
+  center_offset_y: 0.08854381031991934
+  depth_input_max: 27.646133568682536
+  depth_input_min: 11.969743845298002
+  input_x_range: 0.64323575482425
+  input_y_range: 0.2676665406703761
